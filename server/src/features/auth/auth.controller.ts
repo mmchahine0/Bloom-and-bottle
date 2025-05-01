@@ -1,0 +1,407 @@
+import { NextFunction, Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import { validationResult } from "express-validator";
+import { User } from "../../database/model/userModel";
+import { VerificationCode } from "../../database/model/verificationModel";
+import { errorHandler } from "../../utils/error";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../../utils/generateToken";
+import jwt, { TokenExpiredError } from "jsonwebtoken";
+import { OTPService } from "../../emails/otp/otp";
+import mongoose from "mongoose";
+import { PasswordReset } from "../../database/model/passwordReset";
+
+const otpService = new OTPService();
+
+interface UserWithVerificationCode extends mongoose.Document {
+  email: string;
+  isVerified: boolean;
+  _id: mongoose.Types.ObjectId;
+  verificationCode?: {
+    code: string;
+    expiresAt: Date;
+    userId: mongoose.Types.ObjectId | string;
+  };
+}
+
+interface UserWithPasswordReset extends mongoose.Document {
+  email: string;
+  password: string;
+  _id: mongoose.Types.ObjectId;
+  passwordReset?: {
+    code: string;
+    expiresAt: Date;
+    userId: mongoose.Types.ObjectId | string;
+  };
+}
+export const signUp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    next(
+      errorHandler(
+        400,
+        errors
+          .array()
+          .map((err) => err.msg)
+          .join(", ")
+      )
+    );
+    return;
+  }
+
+  const { email, password, name } = req.body;
+
+  try {
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      next(errorHandler(400, "User already exists"));
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      role: "USER",
+      password: hashedPassword,
+    });
+
+    // Send verification email right after user creation
+    try {
+      await otpService.generateAndSendOTP(email, "VERIFICATION");
+    } catch (emailError) {
+      // If email fails, we'll log it but won't fail the signup
+      console.error("Failed to send verification email:", emailError);
+    }
+
+    res.status(201).json({
+      statusCode: 201,
+      message:
+        "User created successfully. Please check your email for verification.",
+      data: {
+        name: user.name,
+        id: user.id,
+        email: user.email,
+      },
+    });
+  } catch (error: unknown) {
+    next(
+      error instanceof Error
+        ? errorHandler(500, `Failed to create user: ${error.message}`)
+        : errorHandler(500, "Failed to create user")
+    );
+  }
+};
+
+export const signIn = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      next(errorHandler(401, "Invalid credentials"));
+      return;
+    }
+
+    if (!user.isVerified) {
+      next(
+        errorHandler(403, "Email not verified. Please verify your email first.")
+      );
+      return;
+    }
+
+    if (user.suspended) {
+      next(errorHandler(403, "Account suspended"));
+      return;
+    }
+
+    const accessToken = generateAccessToken(
+      user.id.toString(),
+      user.role.toString(),
+      user.suspended
+    );
+    const refreshToken = generateRefreshToken(
+      user.id.toString(),
+      user.role.toString(),
+      user.suspended
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 5 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      statusCode: 200,
+      message: "Sign in successful",
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        suspended: user.suspended,
+        accessToken,
+      },
+    });
+  } catch (error) {
+    next(errorHandler(500, "Failed to sign in"));
+  }
+};
+
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { email, code } = req.body;
+
+  try {
+    const user = (await User.findOne({ email }).populate(
+      "verificationCode"
+    )) as UserWithVerificationCode | null;
+
+    if (!user) {
+      next(errorHandler(404, "User not found"));
+      return;
+    }
+
+    if (user.isVerified) {
+      next(errorHandler(400, "Email is already verified"));
+      return;
+    }
+
+    // Using optional chaining for better readability
+    if (
+      !user.verificationCode?.code ||
+      user.verificationCode.code !== code ||
+      new Date(user.verificationCode.expiresAt) < new Date()
+    ) {
+      next(errorHandler(400, "Invalid or expired verification code"));
+      return;
+    }
+
+    // Start a transaction to update user and delete verification code
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      await User.findByIdAndUpdate(user._id, { isVerified: true }, { session });
+
+      await VerificationCode.deleteOne({ userId: user._id }, { session });
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+
+    res.json({
+      statusCode: 200,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    console.error("Verification error:", error);
+    next(errorHandler(500, "Failed to verify email"));
+  }
+};
+
+export const requestPasswordReset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (user) {
+      await otpService.generateAndSendOTP(email, "PASSWORD_RESET");
+    }
+
+    // Return same response regardless of whether user exists
+    res.json({
+      statusCode: 200,
+      message:
+        "If your email is registered, you will receive a password reset code.",
+    });
+  } catch (error) {
+    next(errorHandler(500, "Failed to process password reset request"));
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { email, code, newPassword } = req.body;
+
+  try {
+    const user = (await User.findOne({ email }).populate(
+      "passwordReset"
+    )) as UserWithPasswordReset | null;
+
+    if (!user) {
+      next(errorHandler(404, "User not found"));
+      return;
+    }
+
+    if (
+      !user.passwordReset?.code ||
+      user.passwordReset.code !== code ||
+      new Date(user.passwordReset.expiresAt) < new Date()
+    ) {
+      next(errorHandler(400, "Invalid or expired reset code"));
+      return;
+    }
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      next(
+        errorHandler(400, "New password cannot be the same as current password")
+      );
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Start a transaction to update password and delete reset code
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      await User.findByIdAndUpdate(
+        user._id,
+        { password: hashedPassword },
+        { session }
+      );
+
+      await PasswordReset.deleteOne({ user: user._id }, { session });
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+
+    res.json({
+      statusCode: 200,
+      message: "Password reset successful",
+      data: {
+        email: user.email,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    next(errorHandler(500, "Failed to reset password"));
+  }
+};
+
+export const resendVerificationCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Return success even if user doesn't exist (security best practice)
+      res.json({
+        statusCode: 200,
+        message:
+          "If your email is registered, a new verification code will be sent.",
+      });
+      return;
+    }
+
+    if (user.isVerified) {
+      next(errorHandler(400, "Email is already verified"));
+      return;
+    }
+
+    // Generate and send new OTP
+    await otpService.generateAndSendOTP(email, "VERIFICATION");
+
+    res.json({
+      statusCode: 200,
+      message:
+        "If your email is registered, a new verification code will be sent.",
+    });
+  } catch (error) {
+    next(errorHandler(500, "Failed to resend verification code"));
+  }
+};
+
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      next(errorHandler(401, "No refresh token"));
+      return;
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET as string
+    ) as jwt.JwtPayload;
+
+    const newAccessToken = generateAccessToken(
+      decoded.userId,
+      decoded.role,
+      decoded.suspended
+    );
+
+    // Optionally: Rotate refresh token for added security
+    const newRefreshToken = generateRefreshToken(
+      decoded.userId,
+      decoded.role,
+      decoded.suspended
+    );
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 5 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      statusCode: 200,
+      message: "Token refreshed",
+      data: { accessToken: newAccessToken },
+    });
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      res.clearCookie("refreshToken");
+      next(errorHandler(401, "Refresh token expired"));
+      return;
+    }
+    next(errorHandler(401, "Invalid refresh token"));
+  }
+};
