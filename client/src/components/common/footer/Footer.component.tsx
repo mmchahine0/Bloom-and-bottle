@@ -10,13 +10,12 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = ({ content }) => {
   const currentYear = new Date().getFullYear();
-  const companyName = content?.companyName ?? "Company Name";
   const description =
-    content?.description ?? "Building better solutions for tomorrow";
+    content?.description ?? "Luxury Perfume Decants & Samples";
 
   return (
     <footer
-      className="bg-[#16C47F]/5 border-t border-[#16C47F]/10"
+      className="bg-black border-t"
       role="contentinfo"
       aria-label="Site footer"
     >
@@ -29,12 +28,12 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
           >
             <h2
               id="company-info"
-              className="text-lg font-semibold text-[#16C47F]"
+              className="text-lg font-semibold text-[#f6d9d2]"
             >
-              {companyName}
+              {"Bloom and bottle"}
             </h2>
             <p
-              className="text-sm text-gray-600 text-center sm:text-left max-w-md"
+              className="text-sm text-[#ecbdc6] text-center sm:text-left max-w-md"
               aria-label="Company description"
             >
               {description}
@@ -50,19 +49,24 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
               className="flex flex-wrap justify-center gap-x-6 gap-y-2"
               role="list"
             >
-              {content?.links?.map((link, index) => (
-                <li key={index} role="listitem">
-                  <Link
-                    to={link.path}
-                    className="text-sm text-gray-600 hover:text-[#FF9D23] transition-colors duration-150 ease-in-out
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9D23] 
+              <Link
+                to={"/aboutUs"}
+                className="text-sm text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] 
                              rounded-sm px-2 py-1"
-                    aria-label={`${link.label} - Footer link`}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+                aria-label={`About us - Footer link`}
+              >
+                About Us
+              </Link>
+              <Link
+                to={"/Whatsapppp"}
+                className="text-sm text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] 
+                             rounded-sm px-2 py-1"
+                aria-label={`Contact Us - Footer link`}
+              >
+                Contact Us
+              </Link>
             </ul>
           </nav>
         </div>
@@ -73,11 +77,11 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
           role="presentation"
         >
           <p
-            className="text-center text-sm text-gray-500"
-            aria-label={`Copyright ${currentYear} ${companyName}`}
+            className="text-center text-sm text-[#ecbdc6]"
+            aria-label={`Copyright ${currentYear} ${"Bloom and bottle"}`}
           >
-            <span aria-hidden="true">©</span> {currentYear} {companyName}. All
-            rights reserved.
+            <span aria-hidden="true">©</span> {currentYear} {"Bloom and bottle"}
+            . All rights reserved.
           </p>
         </div>
       </div>
