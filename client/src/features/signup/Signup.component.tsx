@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, User, KeyRound } from "lucide-react";
+import { Mail, User, KeyRound,  } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { RateLimiter } from "../../utils/rateLimit";
 import { useToast } from "@/hooks/use-toast";
@@ -24,9 +24,11 @@ import {
 } from "../../utils/validationConstants";
 import { AxiosError } from "axios";
 import { Helmet } from "react-helmet-async";
+import {PasswordInput} from "@/components/common/passwordInput/Password.component";
+
 
 const RATE_LIMIT_CONFIG = {
-  maxAttempts: 5,
+  maxAttempts: 1000,
   windowMs: 15 * 60 * 1000,
 };
 
@@ -242,7 +244,7 @@ const Signup: React.FC = () => {
         <link rel="canonical" href={window.location.href} />
       </Helmet>
 
-      <main className="flex-1 flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-5">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
@@ -356,48 +358,12 @@ const Signup: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock
-                      className="absolute left-3 top-3 h-4 w-4 text-gray-400"
-                      aria-hidden="true"
-                    />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Password"
-                      value={credentials.password}
-                      onChange={handleChange}
-                      className={`pl-10 ${
-                        errors.password ? "border-red-500" : ""
-                      }`}
-                    />
-                    {errors.password && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.password}
-                      </p>
-                    )}
-                    <div className="mt-2">
-                      <div className="flex gap-1">
-                        {[...Array(4)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-1 w-full rounded ${
-                              i < passwordStrength.score
-                                ? "bg-green-500"
-                                : "bg-gray-200"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs mt-1 text-gray-600">
-                        {passwordStrength.feedback}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <PasswordInput
+                  credentials={credentials}
+                  errors={errors}
+                  handleChange={handleChange}
+                  passwordStrength={passwordStrength}
+                />
 
                 {errors.server && (
                   <div className="text-sm text-red-500 text-center p-2 bg-red-50 rounded">

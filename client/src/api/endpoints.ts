@@ -8,6 +8,16 @@ export const ENDPOINTS = {
     ResetPassword: "/auth/reset-password",
     RefreshToken: "/auth/refresh",
   },
+  Products:{
+    Perfume: {
+      Base: "/perfume",
+      GetAll: "/perfume",
+      GetById: (id: string) => `/perfume/${id}`,
+      Create: "/perfume",
+      Update: (id: string) => `/perfume/${id}`,
+      Delete: (id: string) => `/perfume/${id}`,
+    },
+  },
   Notifications: {
     Base: "/notifications",
     MarkAsRead: (id: string) => `/notifications/${id}/read`,

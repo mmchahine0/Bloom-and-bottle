@@ -1,5 +1,7 @@
 import { createClient } from "redis";
+import dotenv from "dotenv";
 
+dotenv.config();
 class RedisClient {
   private static instance: RedisClient;
   private client: ReturnType<typeof createClient>;
@@ -7,7 +9,7 @@ class RedisClient {
 
   private constructor() {
     this.client = createClient({
-      url: process.env.REDIS_URL || "redis://localhost:6379",
+      url: process.env.REDIS_URL,
     });
 
     this.client.on("error", (error: unknown) => {
@@ -55,15 +57,25 @@ class RedisClient {
     await this.client.flushAll();
   }
 
-  // Helper method to generate cache key for todos
-  public generateTodosCacheKey(
-    userId: string,
-    page: number,
-    limit: number,
-    status?: string
-  ): string {
-    return `todos:${userId}:${page}:${limit}:${status || "all"}`;
-  }
+  public getPerfumeCacheKey = (query: any): string => {
+    const keyParts = [
+      query.type || "",
+      query.brand || "",
+      query.category || "",
+      query.minPrice || "",
+      query.maxPrice || "",
+      query.available || "",
+      query.sort || "",
+      query.featured || "",
+      query.limitedEdition || "",
+      query.comingSoon || "",
+      query.minRating || "",
+      query.page || 1,
+      query.limit || 12,
+    ];
+
+    return `perfumes:${keyParts.join(":")}`;
+  };
 
   // Helper method to generate cache key for admin users table
   public generateAdminUsersCacheKey(page: number, limit: number): string {

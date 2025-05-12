@@ -3,6 +3,7 @@ import SignupComponent from "../features/signup/Signup.component";
 import Home from "../features/home/Home.component";
 import UserProfile from "../features/userProfile/User.component";
 import AdminDashboard from "@/features/admin/adminDashboard/AdminDashboard.component";
+import MenPerfumesPage from "@/features/perfume/men/Men.component";
 
 export interface RouteConfig {
   path: string;
@@ -29,6 +30,7 @@ export const publicRoutes: RouteConfig[] = [
     component: Home,
     layout: "base",
   },
+  { path: "/collection", component: MenPerfumesPage, layout: "base" },
 ];
 
 // Routes that require user authentication

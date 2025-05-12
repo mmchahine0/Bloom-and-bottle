@@ -93,12 +93,12 @@ export class RateLimiter {
 }
 
 const SIGNIN_RATE_LIMIT_CONFIG = {
-  maxAttempts: 20,
+  maxAttempts: 1000,
   windowMs: 15 * 60 * 1000,
 };
 
 const SIGNUP_RATE_LIMIT_CONFIG = {
-  maxAttempts: 15,
+  maxAttempts: 1000,
   windowMs: 30 * 60 * 1000,
 };
 

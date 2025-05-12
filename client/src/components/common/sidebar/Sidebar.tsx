@@ -2,7 +2,6 @@ import {
   Calendar,
   ChevronUp,
   Home,
-  Inbox,
   User2,
   Users,
   Laptop,
@@ -26,12 +25,6 @@ const userItems = [
     url: "/home",
     icon: Home,
     description: "Return to homepage",
-  },
-  {
-    title: "Todo",
-    url: "/dashboard/todo",
-    icon: Inbox,
-    description: "View and manage your tasks",
   },
   {
     title: "Profile",

@@ -1,18 +1,25 @@
-import { Schema, model } from "mongoose";
+import mongoose from "mongoose";
 
-const verificationCodeSchema = new Schema({
-  code: { type: String, required: true },
-  expiresAt: { type: Date, required: true },
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    unique: true,
-  }, // one code per user
-  createdAt: { type: Date, default: Date.now },
-});
+const verificationCodeSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    code: {
+      type: String,
+      required: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
-export const VerificationCode = model(
+export const VerificationCode = mongoose.model(
   "VerificationCode",
   verificationCodeSchema
 );

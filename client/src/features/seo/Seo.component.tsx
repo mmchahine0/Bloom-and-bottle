@@ -15,7 +15,7 @@ export const SEO: React.FC<SEOProps> = ({
   description = "A modern task management application",
   canonical = typeof window !== "undefined" ? window.location.href : "",
   type = "website",
-  name = "Todo App",
+  name = "Bloom and bottle",
   image = "/og-image.jpg",
 }) => {
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";

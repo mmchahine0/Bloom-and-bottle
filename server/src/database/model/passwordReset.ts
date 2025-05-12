@@ -1,15 +1,25 @@
-import { Schema, model } from "mongoose";
+import mongoose from "mongoose";
 
-const passwordResetSchema = new Schema({
-  code: { type: String, required: true },
-  expiresAt: { type: Date, required: true },
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    unique: true,
+const passwordResetSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    code: {
+      type: String,
+      required: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
   },
-  createdAt: { type: Date, default: Date.now },
-});
+  { timestamps: true }
+);
 
-export const PasswordReset = model("PasswordReset", passwordResetSchema);
+export const PasswordReset = mongoose.model(
+  "PasswordReset",
+  passwordResetSchema
+);

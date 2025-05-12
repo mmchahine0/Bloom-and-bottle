@@ -285,7 +285,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 >
                   <Search size={20} />
                 </button>
-                <p className="py-1.5 text-[#ecbdc6] rounded-md pr-4 pointer-events-none">
+                <p className="py-1.5 text-[#ecbdc6] rounded-md pr-4 pointer-events-none hidden  lg:block">
                   Search Items Here
                 </p>
               </div>
