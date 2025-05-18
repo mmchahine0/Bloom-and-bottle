@@ -8,6 +8,11 @@ import {
   bulkDeletePerfumes,
   updateFeaturedStatus,
   updateStock,
+  getAllSamples,
+  getPerfumesForMen,
+  getPerfumesForWomen,
+  getSamplesForMen,
+  getSamplesForWomen,
 } from "../perfume/perfume.controller";
 import {
   createPerfumeValidation,
@@ -25,6 +30,11 @@ const router = Router();
 // Public routes (read-only)
 router.get("/perfumes", getPerfumes);
 router.get("/perfumes/:id", getPerfumeById);
+router.get("/perfumes/men", getPerfumesForMen);
+router.get("/perfumes/women", getPerfumesForWomen);
+router.get("/samples/men", getSamplesForMen);
+router.get("/samples/women", getSamplesForWomen);
+router.get("/samples", getAllSamples);
 
 // Protected routes (require authentication)
 router.post(

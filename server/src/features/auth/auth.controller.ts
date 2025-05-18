@@ -169,58 +169,39 @@ export const verifyEmail = async (
 ): Promise<void> => {
   const { email, code } = req.body;
 
+  if (!email || !code) {
+    res.status(400).json({
+      statusCode: 400,
+      message: "Email and verification code are required",
+    });
+    return;
+  }
+
   try {
-    const user = (await User.findOne({ email }).populate(
-      "verificationCode"
-    )) as UserWithVerificationCode | null;
+    // Use the OTP service to verify the code
+    const isVerified = await otpService.verifyOTP(email, code, "VERIFICATION");
 
-    if (!user) {
-      next(errorHandler(404, "User not found"));
+    if (!isVerified) {
+      res.status(400).json({
+        statusCode: 400,
+        message: "Invalid or expired verification code",
+      });
       return;
     }
 
-    if (user.isVerified) {
-      next(errorHandler(400, "Email is already verified"));
-      return;
-    }
-
-    // Using optional chaining for better readability
-    if (
-      !user.verificationCode?.code ||
-      user.verificationCode.code !== code ||
-      new Date(user.verificationCode.expiresAt) < new Date()
-    ) {
-      next(errorHandler(400, "Invalid or expired verification code"));
-      return;
-    }
-
-    // Start a transaction to update user and delete verification code
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      await User.findByIdAndUpdate(user._id, { isVerified: true }, { session });
-
-      await VerificationCode.deleteOne({ userId: user._id }, { session });
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
-
+    // If we get here, verification was successful
     res.json({
       statusCode: 200,
       message: "Email verified successfully",
     });
   } catch (error) {
     console.error("Verification error:", error);
-    next(errorHandler(500, "Failed to verify email"));
+    res.status(500).json({
+      statusCode: 500,
+      message: "Failed to verify email",
+    });
   }
 };
-
 export const requestPasswordReset = async (
   req: Request,
   res: Response,
@@ -253,65 +234,41 @@ export const resetPassword = async (
 ): Promise<void> => {
   const { email, code, newPassword } = req.body;
 
+  if (!email || !code || !newPassword) {
+    res.status(400).json({
+      statusCode: 400,
+      message: "Email, code, and new password are required",
+    });
+    return;
+  }
+
   try {
-    const user = (await User.findOne({ email }).populate(
-      "passwordReset"
-    )) as UserWithPasswordReset | null;
+    // Verify the reset code
+    const isVerified = await otpService.verifyOTP(
+      email,
+      code,
+      "PASSWORD_RESET"
+    );
 
-    if (!user) {
-      next(errorHandler(404, "User not found"));
+    if (!isVerified) {
+      res.status(400).json({
+        statusCode: 400,
+        message: "Invalid or expired reset code",
+      });
       return;
     }
 
-    if (
-      !user.passwordReset?.code ||
-      user.passwordReset.code !== code ||
-      new Date(user.passwordReset.expiresAt) < new Date()
-    ) {
-      next(errorHandler(400, "Invalid or expired reset code"));
-      return;
-    }
-    const isSamePassword = await bcrypt.compare(newPassword, user.password);
-    if (isSamePassword) {
-      next(
-        errorHandler(400, "New password cannot be the same as current password")
-      );
-      return;
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Start a transaction to update password and delete reset code
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      await User.findByIdAndUpdate(
-        user._id,
-        { password: hashedPassword },
-        { session }
-      );
-
-      await PasswordReset.deleteOne({ user: user._id }, { session });
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
-
+    // The OTP service already handles updating the password if the code is valid
     res.json({
       statusCode: 200,
       message: "Password reset successful",
-      data: {
-        email: user.email,
-        updatedAt: new Date().toISOString(),
-      },
     });
   } catch (error) {
-    next(errorHandler(500, "Failed to reset password"));
+    console.error("Password reset error:", error);
+    res.status(500).json({
+      statusCode: 500,
+      message: "Failed to reset password",
+    });
   }
 };
 

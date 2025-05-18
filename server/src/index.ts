@@ -9,6 +9,8 @@ import authRoutes from "./features/auth/auth.route";
 import adminRoutes from "./features/admin/admin.route";
 import userRoutes from "./features/user/user.route";
 import perfumeRoutes from "./features/products/perfume/perfume.route";
+import orderRoutes from "./features/orders/orders.routes";
+import adminProductRoutes from "./features/admin/products/adminProducts.routes";
 
 dotenv.config();
 
@@ -41,6 +43,8 @@ app.use("/api/v1", authRoutes);
 app.use("/api/v1", adminRoutes);
 app.use("/api/v1", userRoutes);
 app.use("/api/v1", perfumeRoutes);
+app.use("/api/v1", orderRoutes);
+app.use("/api/v1", adminProductRoutes);
 
 // Error handling middleware
 app.use(errorMiddleware);

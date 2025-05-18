@@ -4,12 +4,14 @@ import { PasswordReset } from "../../database/model/passwordReset";
 import { generateSecureOTP, verifyOTP } from "../../utils/emailService";
 import { sendVerificationEmail } from "../verification/verfication";
 import { sendPasswordResetEmail } from "../reset/reset";
+import mongoose from "mongoose";
 
 // OTP configurations
 const OTP_CONFIG = {
   length: 6,
   expiresIn: 15 * 60 * 1000, // 15 minutes
 };
+
 // Database model interface
 export interface OTPRecord {
   email: string;
@@ -34,29 +36,56 @@ export class OTPService {
         throw new Error("User not found");
       }
 
-      // Update or create OTP record in database
-      if (type === "VERIFICATION") {
-        await VerificationCode.findOneAndUpdate(
-          { userId: user._id },
-          {
-            code: hash,
-            expiresAt,
-          },
-          { upsert: true, new: true }
-        );
+      // Start a session to ensure atomicity
+      const session = await mongoose.startSession();
+      session.startTransaction();
 
-        await sendVerificationEmail(email, code);
-      } else {
-        await PasswordReset.findOneAndUpdate(
-          { userId: user._id },
-          {
-            code: hash,
-            expiresAt,
-          },
-          { upsert: true, new: true }
-        );
+      try {
+        // Update or create OTP record in database
+        if (type === "VERIFICATION") {
+          const verificationDoc = await VerificationCode.findOneAndUpdate(
+            { userId: user._id },
+            {
+              code: code, // Store the plain code - we'll check this in the controller
+              expiresAt,
+            },
+            { upsert: true, new: true, session }
+          );
 
-        await sendPasswordResetEmail(email, code);
+          // Update the user's reference to the verification code
+          await User.findByIdAndUpdate(
+            user._id,
+            { verificationCode: verificationDoc._id },
+            { session }
+          );
+
+          await sendVerificationEmail(email, code);
+        } else {
+          const resetDoc = await PasswordReset.findOneAndUpdate(
+            { userId: user._id },
+            {
+              code: code, // Store the plain code
+              expiresAt,
+            },
+            { upsert: true, new: true, session }
+          );
+
+          // Update the user's reference to the password reset
+          await User.findByIdAndUpdate(
+            user._id,
+            { passwordReset: resetDoc._id },
+            { session }
+          );
+
+          await sendPasswordResetEmail(email, code);
+        }
+
+        await session.commitTransaction();
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
       }
     } catch (error) {
       console.error("OTP Generation Error:", error);
@@ -93,14 +122,27 @@ export class OTPService {
         return false;
       }
 
-      // Verify code
-      const isValid = verifyOTP(record.code, code);
+      // Direct code comparison since we store plain code
+      const isValid = record.code === code;
 
       // Delete the code after verification (whether successful or not)
       if (type === "VERIFICATION") {
         await VerificationCode.deleteOne({ userId: user._id });
+
+        // If verification was successful, update the user's isVerified status
+        if (isValid) {
+          await User.findByIdAndUpdate(user._id, {
+            isVerified: true,
+            verificationCode: undefined, // Remove the reference
+          });
+        }
       } else {
         await PasswordReset.deleteOne({ userId: user._id });
+        if (isValid) {
+          await User.findByIdAndUpdate(user._id, {
+            passwordReset: undefined, // Remove the reference
+          });
+        }
       }
 
       return isValid;

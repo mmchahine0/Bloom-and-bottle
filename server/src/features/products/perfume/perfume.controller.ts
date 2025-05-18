@@ -112,6 +112,35 @@ export const getPerfumes = async (
   }
 };
 
+export const getPerfumesForMen = (req: Request, res: Response) => {
+  req.query.type = "perfume";
+  req.query.category = "men";
+  return getPerfumes(req, res);
+};
+
+export const getPerfumesForWomen = (req: Request, res: Response) => {
+  req.query.type = "perfume";
+  req.query.category = "women";
+  return getPerfumes(req, res);
+};
+
+export const getSamplesForMen = (req: Request, res: Response) => {
+  req.query.type = "sample";
+  req.query.category = "men";
+  return getPerfumes(req, res);
+};
+
+export const getSamplesForWomen = (req: Request, res: Response) => {
+  req.query.type = "sample";
+  req.query.category = "women";
+  return getPerfumes(req, res);
+};
+
+export const getAllSamples = (req: Request, res: Response) => {
+  req.query.type = "sample";
+  return getPerfumes(req, res);
+};
+
 export const getPerfumeById = async (
   req: Request,
   res: Response
