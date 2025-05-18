@@ -3,7 +3,9 @@ import SignupComponent from "../features/signup/Signup.component";
 import Home from "../features/home/Home.component";
 import UserProfile from "../features/userProfile/User.component";
 import AdminDashboard from "@/features/admin/adminDashboard/AdminDashboard.component";
-import MenPerfumesPage from "@/features/perfume/men/Men.component";
+import MenPerfumesPage from "@/features/perfume/men/MenP.component";
+import Cart from "@/features/cart/Cart.component";
+import OrdersDashboard from "@/features/admin/adminOrders/adminOrders.component";
 
 export interface RouteConfig {
   path: string;
@@ -30,7 +32,13 @@ export const publicRoutes: RouteConfig[] = [
     component: Home,
     layout: "base",
   },
-  { path: "/collection", component: MenPerfumesPage, layout: "base" },
+  { path: "/about", component: MenPerfumesPage, layout: "base" },
+  { path: "/perfumes", component: MenPerfumesPage, layout: "base" },
+  { path: "/perfumes/men", component: MenPerfumesPage, layout: "base" },
+  { path: "/perfumes/women", component: MenPerfumesPage, layout: "base" },
+  { path: "/samples/men", component: MenPerfumesPage, layout: "base" },
+  { path: "/samples/women", component: MenPerfumesPage, layout: "base" },
+  { path: "/samples", component: MenPerfumesPage, layout: "base" },
 ];
 
 // Routes that require user authentication
@@ -39,6 +47,30 @@ export const protectedRoutes: RouteConfig[] = [
     path: "/dashboard/profile",
     component: UserProfile,
     layout: "dashboard",
+    isProtected: true,
+  },
+  {
+    path: "/dashboard/survey",
+    component: MenPerfumesPage,
+    layout: "base",
+    isProtected: true,
+  },
+  {
+    path: "/dashboard/cart",
+    component: Cart,
+    layout: "dashboard",
+    isProtected: true,
+  },
+  {
+    path: "/dashboard/orders",
+    component: MenPerfumesPage,
+    layout: "base",
+    isProtected: true,
+  },
+  {
+    path: "/dashboard/order/:id",
+    component: MenPerfumesPage,
+    layout: "base",
     isProtected: true,
   },
 ];
@@ -50,5 +82,20 @@ export const adminRoutes: RouteConfig[] = [
     component: AdminDashboard,
     layout: "dashboard",
     admin: true,
+  },
+  {
+    path: "/dashboard/admin/perfumes",
+    component: MenPerfumesPage,
+    layout: "dashboard",
+  },
+  {
+    path: "/dashboard/admin/samples",
+    component: MenPerfumesPage,
+    layout: "dashboard",
+  },
+  {
+    path: "/dashboard/admin/orders",
+    component: OrdersDashboard,
+    layout: "dashboard",
   },
 ];

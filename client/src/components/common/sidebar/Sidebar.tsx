@@ -7,6 +7,7 @@ import {
   Laptop,
   HousePlus,
   LogOut,
+  StickyNote,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import * as sidebar from "@/components/ui/sidebar";
@@ -54,14 +55,20 @@ const adminItems = [
     description: "Manage system users",
   },
   {
-    title: "Layout Management",
-    url: "/dashboard/admin/layout",
-    icon: Laptop,
+    title: "Orders Management",
+    url: "/dashboard/admin/orders",
+    icon: StickyNote,
     description: "Customize site layout",
   },
   {
-    title: "Home Management",
-    url: "/dashboard/admin/layout/home",
+    title: "Perfumes Management",
+    url: "/dashboard/admin/perfumes",
+    icon: HousePlus,
+    description: "Manage homepage content",
+  },
+  {
+    title: "Samples Management",
+    url: "/dashboard/admin/samples",
     icon: HousePlus,
     description: "Manage homepage content",
   },
@@ -110,19 +117,19 @@ export function AppSidebar({ username, role, isOpen }: AppSidebarProps) {
 
   return (
     <aside
-      className="flex h-full bg-[#16C47F]/5"
+      className="flex h-full bg-[#58477a]/5"
       role="navigation"
       aria-label="Main navigation sidebar"
     >
       <sidebar.Sidebar
         collapsible="icon"
-        className="border-r border-[#16C47F]/10 bg-[#16C47F]/5"
+        className="border-r border-[#58477a]/10 bg-[#58477a]/5"
         aria-expanded={isOpen}
       >
-        <sidebar.SidebarContent className="bg-[#16C47F]/5">
+        <sidebar.SidebarContent className="bg-[#58477a]/5">
           <sidebar.SidebarGroup>
             <sidebar.SidebarGroupLabel
-              className="text-sm font-medium text-[#16C47F]"
+              className="text-sm font-medium text-[#58477a]"
               id="navigation-section"
             >
               Application
@@ -155,7 +162,7 @@ export function AppSidebar({ username, role, isOpen }: AppSidebarProps) {
                           className={`w-5 h-5 ${
                             isActive(item.url)
                               ? "text-orange-500"
-                              : "text-[#16C47F]"
+                              : "text-[#58477a]"
                           }`}
                           aria-hidden="true"
                         />
@@ -178,7 +185,7 @@ export function AppSidebar({ username, role, isOpen }: AppSidebarProps) {
         </sidebar.SidebarContent>
 
         <sidebar.SidebarFooter
-          className="border-t border-[#16C47F]/10 p-4 bg-[#16C47F]/5"
+          className="border-t border-[#58477a]/10 p-4 bg-[#58477a]/5"
           role="complementary"
           aria-label="User menu"
         >
@@ -200,7 +207,7 @@ export function AppSidebar({ username, role, isOpen }: AppSidebarProps) {
                     role="menuitem"
                   >
                     <User2
-                      className="w-5 h-5 text-[#16C47F]"
+                      className="w-5 h-5 text-[#58477a]"
                       aria-hidden="true"
                     />
                     <span className="font-medium text-gray-700">

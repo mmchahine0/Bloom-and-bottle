@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Mail, User, KeyRound,  } from "lucide-react";
+import { Mail, User, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { RateLimiter } from "../../utils/rateLimit";
 import { useToast } from "@/hooks/use-toast";
@@ -24,8 +24,7 @@ import {
 } from "../../utils/validationConstants";
 import { AxiosError } from "axios";
 import { Helmet } from "react-helmet-async";
-import {PasswordInput} from "@/components/common/passwordInput/Password.component";
-
+import { PasswordInput } from "@/components/common/passwordInput/Password.component";
 
 const RATE_LIMIT_CONFIG = {
   maxAttempts: 1000,
@@ -147,7 +146,7 @@ const Signup: React.FC = () => {
     try {
       const verificationData: VerificationCredentials = {
         email: registeredEmail,
-        otp: otpInput,
+        code: otpInput,
       };
 
       await verifyEmail(verificationData);

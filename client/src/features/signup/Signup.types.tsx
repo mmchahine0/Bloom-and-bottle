@@ -9,7 +9,7 @@ export interface ServerError {
 }
 export interface VerificationCredentials {
   email: string;
-  otp: string;
+  code: string;
 }
 
 export interface ServerResponse {

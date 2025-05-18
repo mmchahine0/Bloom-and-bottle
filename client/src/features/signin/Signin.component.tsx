@@ -164,7 +164,7 @@ const Signin = () => {
       // First verify the email
       await verifyEmail({
         email: userInput.email,
-        otp: otpInput,
+        code: otpInput,
       });
 
       // After successful verification, attempt login again

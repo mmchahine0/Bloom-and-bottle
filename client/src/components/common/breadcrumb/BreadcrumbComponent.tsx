@@ -54,9 +54,9 @@ export const BreadcrumbComponent = () => {
             <BreadcrumbLink asChild>
               <Link
                 to={"/home"}
-                className="text-[#16C47F] hover:text-[#16C47F]/80 transition-colors
+                className="text-[#9283a9] hover:text-[#9283a9]/80 transition-colors
                          focus-visible:outline-none focus-visible:ring-2 
-                         focus-visible:ring-[#16C47F] rounded-sm px-1"
+                         focus-visible:ring-[#9283a9] rounded-sm px-1"
                 aria-label="Return to home page"
               >
                 Home
@@ -97,9 +97,9 @@ export const BreadcrumbComponent = () => {
                     <BreadcrumbLink asChild>
                       <Link
                         to={to}
-                        className="text-[#16C47F] hover:text-[#16C47F]/80 transition-colors
+                        className="text-[#9283a9] hover:text-[#9283a9]/80 transition-colors
                                  focus-visible:outline-none focus-visible:ring-2 
-                                 focus-visible:ring-[#16C47F] rounded-sm px-1"
+                                 focus-visible:ring-[#9283a9] rounded-sm px-1"
                         aria-label={generateItemAriaLabel()}
                       >
                         {displayValue}

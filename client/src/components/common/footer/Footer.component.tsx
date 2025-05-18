@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Instagram, MessageCircle } from "lucide-react";
 
 interface FooterProps {
   content: {
@@ -12,6 +13,9 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
   const currentYear = new Date().getFullYear();
   const description =
     content?.description ?? "Luxury Perfume Decants & Samples";
+
+  const whatsappNumber = "+961 76 951 471";
+  const instagramHandle = "bloomandbottle.lb";
 
   return (
     <footer
@@ -50,7 +54,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
               role="list"
             >
               <Link
-                to={"/aboutUs"}
+                to={"/about"}
                 className="text-sm text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] 
                              rounded-sm px-2 py-1"
@@ -58,17 +62,46 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
               >
                 About Us
               </Link>
-              <Link
-                to={"/Whatsapppp"}
+              <a
+                href={`https://wa.me/${whatsappNumber.replace(/\s+/g, "")}`}
+                target="_blank"
                 className="text-sm text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] 
                              rounded-sm px-2 py-1"
                 aria-label={`Contact Us - Footer link`}
               >
                 Contact Us
-              </Link>
+              </a>
             </ul>
           </nav>
+        </div>
+
+        {/* Social Media Links */}
+        <div className="mt-6 flex justify-center space-x-6">
+          <a
+            href={`https://instagram.com/${instagramHandle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
+                      flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 
+                      focus-visible:ring-[white] rounded-sm px-2 py-1"
+            aria-label="Find us on Instagram"
+          >
+            <Instagram size={20} />
+            <span className="text-sm">@{instagramHandle}</span>
+          </a>
+          <a
+            href={`https://wa.me/${whatsappNumber.replace(/\s+/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
+                      flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 
+                      focus-visible:ring-[white] rounded-sm px-2 py-1"
+            aria-label="Contact us on WhatsApp"
+          >
+            <MessageCircle size={20} />
+            <span className="text-sm">{whatsappNumber}</span>
+          </a>
         </div>
 
         {/* Copyright Notice */}

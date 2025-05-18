@@ -181,10 +181,10 @@ export default function HomePageContent() {
         <img
           src={heroImage}
           alt="Hero background"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover -z-10"
         />
         {/* Overlay for better text visibility */}
-        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-black/30 -z-10"></div>
 
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8">
@@ -255,7 +255,7 @@ export default function HomePageContent() {
                 </div>
                 <div className="p-4 bg-black text-white">
                   <Link
-                    to="/men-fragrances"
+                    to="/perfumes/men"
                     className="flex items-center justify-between group"
                   >
                     <span className="text-xl font-semibold">
@@ -307,7 +307,7 @@ export default function HomePageContent() {
                 </div>
                 <div className="p-4 bg-black text-white">
                   <Link
-                    to="/women-fragrances"
+                    to="/perfumes/women"
                     className="flex items-center justify-between group"
                   >
                     <span className="text-xl font-semibold">

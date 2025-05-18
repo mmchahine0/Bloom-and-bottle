@@ -16,6 +16,7 @@ import {
   LogIn,
   LogOut,
   Search,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import logo from "@/assets/logoSlim.png";
@@ -44,6 +45,8 @@ const Navbar: React.FC<NavbarProps> = () => {
   const [pauseAutoSlide, setPauseAutoSlide] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [perfumesMenuOpen, setPerfumesMenuOpen] = useState(false);
+  const [samplesMenuOpen, setSamplesMenuOpen] = useState(false);
 
   const [searchResults, setSearchResults] = useState<{
     suggestions: string[];
@@ -59,6 +62,8 @@ const Navbar: React.FC<NavbarProps> = () => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const perfumesMenuRef = useRef<HTMLDivElement>(null);
+  const samplesMenuRef = useRef<HTMLDivElement>(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -67,17 +72,25 @@ const Navbar: React.FC<NavbarProps> = () => {
   // Handle closing menu with Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isMenuOpen) {
-        setIsMenuOpen(false);
-        buttonRef.current?.focus();
+      if (e.key === "Escape") {
+        if (isMenuOpen) {
+          setIsMenuOpen(false);
+          buttonRef.current?.focus();
+        }
+        if (perfumesMenuOpen) {
+          setPerfumesMenuOpen(false);
+        }
+        if (samplesMenuOpen) {
+          setSamplesMenuOpen(false);
+        }
       }
     };
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isMenuOpen]);
+  }, [isMenuOpen, perfumesMenuOpen, samplesMenuOpen]);
 
-  // Handle clicking outside to close menu
+  // Handle clicking outside to close menus
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -95,11 +108,27 @@ const Navbar: React.FC<NavbarProps> = () => {
       ) {
         setIsSearchOpen(false);
       }
+
+      if (
+        perfumesMenuOpen &&
+        perfumesMenuRef.current &&
+        !perfumesMenuRef.current.contains(e.target as Node)
+      ) {
+        setPerfumesMenuOpen(false);
+      }
+
+      if (
+        samplesMenuOpen &&
+        samplesMenuRef.current &&
+        !samplesMenuRef.current.contains(e.target as Node)
+      ) {
+        setSamplesMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMenuOpen, isSearchOpen]);
+  }, [isMenuOpen, isSearchOpen, perfumesMenuOpen, samplesMenuOpen]);
 
   // Focus trap within mobile menu
   useEffect(() => {
@@ -176,6 +205,16 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const togglePerfumesMenu = () => {
+    setPerfumesMenuOpen(!perfumesMenuOpen);
+    if (samplesMenuOpen) setSamplesMenuOpen(false);
+  };
+
+  const toggleSamplesMenu = () => {
+    setSamplesMenuOpen(!samplesMenuOpen);
+    if (perfumesMenuOpen) setPerfumesMenuOpen(false);
   };
 
   // Function to handle the search
@@ -255,8 +294,46 @@ const Navbar: React.FC<NavbarProps> = () => {
 
   return (
     <header>
+      {/* Sliding announcement banner */}
+      <div className=" overflow-hidden py-2 text-white border-b-1 cursor-default bg-black">
+        <div className="flex items-center justify-center relative">
+          <button
+            onClick={handlePrevMessage}
+            className="relative left-2 text-[#ecbdc6] hover:text-white z-10"
+            aria-label="Previous message"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <div className="w-full overflow-hidden h-6 relative">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{
+                transform: `translateX(-${currentIndexMessage * 100}%)`,
+              }}
+            >
+              {array.map((item, index) => (
+                <span
+                  key={index}
+                  className="w-full flex-shrink-0 text-center font-bold text-[#ecbdc6] font-mono"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={handleNextMessage}
+            className="relative right-2 text-[#ecbdc6] hover:text-white z-10"
+            aria-label="Next message"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
       <nav
-        className="bg-black border-b border-[#f6d9d2] px-4 py-2.5 relative"
+        className="bg-black border-b border-[#f6d9d2] px-4 py-2.5 relative z-50"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -300,18 +377,102 @@ const Navbar: React.FC<NavbarProps> = () => {
                 >
                   Home
                 </Link>
-                <Link
-                  to="/samples"
-                  className="text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
-                >
-                  Samples
-                </Link>
-                <Link
-                  to="/perfumes"
-                  className="text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
-                >
-                  Perfumes
-                </Link>
+
+                {/* Samples dropdown menu */}
+                <div className="relative">
+                  <button
+                    onClick={toggleSamplesMenu}
+                    className="text-[#ecbdc6] hover:text-white flex items-center px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    aria-expanded={samplesMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    Samples
+                    <ChevronDown size={16} className="ml-1" />
+                  </button>
+
+                  {/* Samples dropdown content */}
+                  {samplesMenuOpen && (
+                    <div
+                      ref={samplesMenuRef}
+                      className="absolute mt-1 w-48 rounded-md shadow-lg bg-black border border-[#f6d9d2] py-1"
+                      role="menu"
+                      aria-orientation="vertical"
+                    >
+                      <Link
+                        to="/samples/men"
+                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        role="menuitem"
+                        onClick={() => setSamplesMenuOpen(false)}
+                      >
+                        Men
+                      </Link>
+                      <Link
+                        to="/samples/women"
+                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        role="menuitem"
+                        onClick={() => setSamplesMenuOpen(false)}
+                      >
+                        Women
+                      </Link>
+                      <Link
+                        to="/samples"
+                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        role="menuitem"
+                        onClick={() => setSamplesMenuOpen(false)}
+                      >
+                        View All
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Perfumes dropdown menu */}
+                <div className="relative">
+                  <button
+                    onClick={togglePerfumesMenu}
+                    className="text-[#ecbdc6] hover:text-white flex items-center px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    aria-expanded={perfumesMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    Perfumes
+                    <ChevronDown size={16} className="ml-1" />
+                  </button>
+
+                  {/* Perfumes dropdown content */}
+                  {perfumesMenuOpen && (
+                    <div
+                      ref={perfumesMenuRef}
+                      className="absolute mt-1 w-48 rounded-md shadow-lg bg-black border border-[#f6d9d2] py-1"
+                      role="menu"
+                      aria-orientation="vertical"
+                    >
+                      <Link
+                        to="/perfumes/men"
+                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        role="menuitem"
+                        onClick={() => setPerfumesMenuOpen(false)}
+                      >
+                        Men
+                      </Link>
+                      <Link
+                        to="/perfumes/women"
+                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        role="menuitem"
+                        onClick={() => setPerfumesMenuOpen(false)}
+                      >
+                        Women
+                      </Link>
+                      <Link
+                        to="/perfumes"
+                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        role="menuitem"
+                        onClick={() => setPerfumesMenuOpen(false)}
+                      >
+                        View All
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -325,7 +486,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 <>
                   {/* Logged in: Show User, Cart, and Logout icons */}
                   <Link
-                    to="/profile"
+                    to="/dashboard/profile"
                     className="text-[#ecbdc6] hover:text-white p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
                     aria-label="User profile"
                     role="menuitem"
@@ -407,22 +568,92 @@ const Navbar: React.FC<NavbarProps> = () => {
               >
                 <span className="text-sm font-medium">Home</span>
               </Link>
-              <Link
-                to="/samples"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
-                role="menuitem"
-              >
-                <span className="text-sm font-medium">Samples</span>
-              </Link>
-              <Link
-                to="/perfumes"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
-                role="menuitem"
-              >
-                <span className="text-sm font-medium">Perfumes</span>
-              </Link>
+
+              {/* Mobile Samples with submenu */}
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    const submenu = document.getElementById("samples-submenu");
+                    if (submenu) {
+                      submenu.classList.toggle("hidden");
+                    }
+                  }}
+                  className="flex items-center justify-between w-full text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                  role="menuitem"
+                >
+                  <span className="text-sm font-medium">Samples</span>
+                  <ChevronDown size={16} />
+                </button>
+                <div id="samples-submenu" className="hidden pl-4 space-y-1">
+                  <Link
+                    to="/samples/men"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    role="menuitem"
+                  >
+                    <span className="text-sm font-medium">Men</span>
+                  </Link>
+                  <Link
+                    to="/samples/women"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    role="menuitem"
+                  >
+                    <span className="text-sm font-medium">Women</span>
+                  </Link>
+                  <Link
+                    to="/samples"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    role="menuitem"
+                  >
+                    <span className="text-sm font-medium">View All</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Mobile Perfumes with submenu */}
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    const submenu = document.getElementById("perfumes-submenu");
+                    if (submenu) {
+                      submenu.classList.toggle("hidden");
+                    }
+                  }}
+                  className="flex items-center justify-between w-full text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                  role="menuitem"
+                >
+                  <span className="text-sm font-medium">Perfumes</span>
+                  <ChevronDown size={16} />
+                </button>
+                <div id="perfumes-submenu" className="hidden pl-4 space-y-1">
+                  <Link
+                    to="/perfumes/men"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    role="menuitem"
+                  >
+                    <span className="text-sm font-medium">Men</span>
+                  </Link>
+                  <Link
+                    to="/perfumes/women"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    role="menuitem"
+                  >
+                    <span className="text-sm font-medium">Women</span>
+                  </Link>
+                  <Link
+                    to="/perfumes"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    role="menuitem"
+                  >
+                    <span className="text-sm font-medium">View All</span>
+                  </Link>
+                </div>
+              </div>
 
               <div className="border-t border-gray-700 my-2"></div>
 
@@ -491,7 +722,7 @@ const Navbar: React.FC<NavbarProps> = () => {
           {isSearchOpen && (
             <div
               ref={searchRef}
-              className="absolute top-full left-0 right-0 w-full bg-black border border-[#f6d9d2] shadow-lg z-30"
+              className="absolute top-full left-0 right-0 w-full bg-black border border-[#f6d9d2] shadow-lg"
               style={{ position: "absolute", top: "100%" }}
             >
               <div className="p-4 pt-2">
@@ -658,45 +889,6 @@ const Navbar: React.FC<NavbarProps> = () => {
               </div>
             </div>
           )}
-
-          {/* Sliding announcement banner */}
-          <div className="relative overflow-hidden pt-2 text-white border-t-1">
-            <div className="flex items-center justify-center relative">
-              <button
-                onClick={handlePrevMessage}
-                className="absolute left-2 text-[#ecbdc6] hover:text-white z-10"
-                aria-label="Previous message"
-              >
-                <ChevronLeft size={20} />
-              </button>
-
-              <div className="w-full overflow-hidden h-6 relative">
-                <div
-                  className="flex transition-transform duration-500 ease-in-out"
-                  style={{
-                    transform: `translateX(-${currentIndexMessage * 100}%)`,
-                  }}
-                >
-                  {array.map((item, index) => (
-                    <span
-                      key={index}
-                      className="w-full flex-shrink-0 text-center font-bold text-[#ecbdc6] font-mono"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={handleNextMessage}
-                className="absolute right-2 text-[#ecbdc6] hover:text-white z-10"
-                aria-label="Next message"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-          </div>
         </div>
       </nav>
     </header>
