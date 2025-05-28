@@ -10,7 +10,9 @@ const perfumeSchema = new Schema({
     },
   ],
   description: { type: String },
-  price: { type: Number }, // price
+  price: { type: Number,
+        required: true,
+  }, // price
   imageUrl: { type: String }, // main image
   category: { type: String, enum: ["men", "women", "un"] },
   brand: { type: String }, // brand name

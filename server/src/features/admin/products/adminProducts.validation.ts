@@ -33,8 +33,9 @@ export const createPerfumeValidation = () => [
     .isIn(["perfume", "sample"])
     .withMessage("Type must be either 'perfume' or 'sample'"),
 
-  body("category")
+    body("category")
     .isString()
+    .isIn(["men", "women", "un"])
     .custom((value) => {
       if (!mongoose.Types.ObjectId.isValid(value)) {
         throw new Error("Invalid category ID");
@@ -138,32 +139,4 @@ export const createPerfumeValidation = () => [
 export const updatePerfumeValidation = () => [
   // Same as create, but all fields are optional
   ...createPerfumeValidation().map((validation) => validation.optional()),
-];
-
-export const updateStockValidation = () => [
-  body("stock")
-    .isInt({ min: 0, max: 10000 })
-    .withMessage("Stock must be a non-negative integer between 0 and 10000"),
-];
-
-export const updateFeaturedStatusValidation = () => [
-  body("featured").isBoolean().withMessage("Featured must be a boolean"),
-];
-
-export const bulkDeleteValidation = () => [
-  body("ids")
-    .isArray({ min: 1, max: 100 })
-    .withMessage("Must provide 1-100 perfume IDs to delete")
-    .custom((ids) => {
-      // Validate each ID is a valid MongoDB ObjectId
-      const invalidIds = ids.filter(
-        (id: string) => !mongoose.Types.ObjectId.isValid(id)
-      );
-
-      if (invalidIds.length > 0) {
-        throw new Error(`Invalid perfume IDs: ${invalidIds.join(", ")}`);
-      }
-
-      return true;
-    }),
 ];

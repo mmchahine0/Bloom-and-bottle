@@ -1,12 +1,20 @@
 import { Request, Response } from "express";
 import { Perfume } from "../../../database/model/perfumeModel";
+import { uploadToS3 } from "../../../utils/awsS3";
+import redisClient from "../../../utils/redis";
 
 // Utility: build dynamic filters
-const buildFilters = (query: any): Promise<void> => {
+const buildFilters = (query: any): any => {
   const filters: any = {};
 
   if (query.type) filters.type = query.type;
-  if (query.category) filters.category = query.category;
+  if (query.category) {
+    if (Array.isArray(query.category)) {
+      filters.category = { $in: query.category };
+    } else {
+      filters.category = query.category;
+    }
+  }
   if (query.brand) filters.brand = query.brand;
   if (query.featured !== undefined)
     filters.featured = query.featured === "true";
@@ -14,18 +22,30 @@ const buildFilters = (query: any): Promise<void> => {
     filters.limitedEdition = query.limitedEdition === "true";
   if (query.comingSoon !== undefined)
     filters.comingSoon = query.comingSoon === "true";
-  if (query.priceMin || query.priceMax) {
-    filters.price = {};
-    if (query.priceMin) filters.price.$gte = parseFloat(query.priceMin);
-    if (query.priceMax) filters.price.$lte = parseFloat(query.priceMax);
+  
+  const priceFilter: any = {};
+  const minPrice = Number(query.priceMin);
+  const maxPrice = Number(query.priceMax);
+
+  if (!isNaN(minPrice)) priceFilter.$gte = minPrice;
+  if (!isNaN(maxPrice)) priceFilter.$lte = maxPrice;
+
+  if (Object.keys(priceFilter).length > 0) {
+    filters.price = priceFilter;
   }
+
   if (query.dateFrom || query.dateTo) {
     filters.createdAt = {};
     if (query.dateFrom) filters.createdAt.$gte = new Date(query.dateFrom);
     if (query.dateTo) filters.createdAt.$lte = new Date(query.dateTo);
   }
+  
   if (query.search) {
-    filters.name = { $regex: query.search, $options: "i" };
+    // Enhanced search to include both name and brand
+    filters.$or = [
+      { name: { $regex: query.search, $options: "i" } },
+      { brand: { $regex: query.search, $options: "i" } }
+    ];
   }
 
   return filters;
@@ -34,7 +54,8 @@ const buildFilters = (query: any): Promise<void> => {
 // GET /perfumes or /samples
 export const getAllProducts = async (
   req: Request,
-  res: Response
+  res: Response,
+  customQuery?: any
 ): Promise<void> => {
   try {
     const {
@@ -42,29 +63,43 @@ export const getAllProducts = async (
       limit = 10,
       sortBy = "createdAt",
       sortDirection = "desc",
-    } = req.query;
+    } = customQuery || req.query;
 
-    const filters = buildFilters(req.query);
+    const filters = buildFilters(customQuery || req.query);
+    
     const sortOption = {
       [sortBy as string]: sortDirection === "asc" ? 1 : -1,
     } as Record<string, 1 | -1>;
+
+    // Generate cache key based on all query parameters
+    const cacheKey = `admin:products:${JSON.stringify({
+      filters,
+      sortBy,
+      sortDirection,
+      page,
+      limit
+    })}`;
 
     const skip = (Number(page) - 1) * Number(limit);
     const totalItems = await Perfume.countDocuments(filters);
     const products = await Perfume.find(filters)
       .sort(sortOption)
       .skip(skip)
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .populate('createdBy', 'name email'); 
 
-    res.json({
+    const response = {
       data: products,
       pagination: {
         totalItems,
         currentPage: Number(page),
         nextPage: skip + products.length < totalItems ? Number(page) + 1 : null,
       },
-    });
+    };
+
+    res.json(response);
   } catch (err) {
+    console.error("Error fetching products:", err);
     res.status(500).json({ error: "Failed to fetch products" });
   }
 };
@@ -76,7 +111,10 @@ export const getProductById = async (
 ): Promise<void> => {
   try {
     const product = await Perfume.findById(req.params.id);
-    if (!product) res.status(404).json({ error: "Product not found" });
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
 
     res.json(product);
   } catch (err) {
@@ -90,12 +128,103 @@ export const createProduct = async (
   res: Response
 ): Promise<void> => {
   try {
-    const adminId = req.user?.id; // assuming middleware adds req.user
-    const product = new Perfume({ ...req.body, createdBy: adminId });
-    await product.save();
-    res.status(201).json(product);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to create product" });
+    const {
+      name,
+      type = "perfume",
+      sizes,
+      description,
+      price,
+      category,
+      brand,
+      notes,
+      rating = 0,
+      reviewsCount = 0,
+      stock = 0,
+      featured = false,
+      limitedEdition = false,
+      comingSoon = false,
+      discount = 0,
+    } = req.body;
+
+    const createdBy = req.user?._id; 
+
+    let parsedSizes: { label: string; price: number }[] = [];
+    if (sizes) {
+      if (typeof sizes === "string") {
+        try {
+          parsedSizes = JSON.parse(sizes);
+        } catch (error) {
+          console.error("Error parsing sizes:", error);
+          res.status(400).json({ message: "Invalid sizes format" });
+          return;
+        }
+      } else {
+        parsedSizes = sizes;
+      }
+    }
+
+    const newPerfume = new Perfume({
+      name,
+      type,
+      sizes: parsedSizes,
+      description,
+      price: Number(price) || 0,
+      category,
+      brand,
+      notes,
+      rating: Number(rating) || 0,
+      reviewsCount: Number(reviewsCount) || 0,
+      stock: Number(stock) || 0,
+      featured: Boolean(featured),
+      limitedEdition: Boolean(limitedEdition),
+      comingSoon: Boolean(comingSoon),
+      discount: Number(discount) || 0,
+      createdBy,
+    });
+
+    const savedPerfume = await newPerfume.save();
+
+    if (req.file) {
+      const result = await uploadToS3(req.file);
+      savedPerfume.imageUrl = result?.Location || null;
+      await savedPerfume.save();
+    }
+
+    // Clear Redis cache after creating new product
+    await redisClient.clearCache();
+
+    res.status(201).json(savedPerfume);
+  } catch (error) {
+    console.error("Create product error:", error);
+    res.status(500).json({ 
+      message: "Failed to create perfume", 
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+};
+
+//Upload image to S3
+export const uploadImageToS3 = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: "No file uploaded" });
+      return;
+    }
+    
+    const result = await uploadToS3(req.file);
+
+    if (!result || !result.Location) {
+      res.status(500).json({ message: "Image upload failed" });
+      return;
+    }
+
+    res.status(200).json({ imageUrl: result.Location });
+  } catch (error) {
+    console.error("[ERROR] Image Upload:", error);
+    res.status(500).json({ message: "Failed to upload image", error });
   }
 };
 
@@ -105,16 +234,62 @@ export const updateProduct = async (
   res: Response
 ): Promise<void> => {
   try {
+    const productId = req.params.id;
+    const updateData = { ...req.body, updatedAt: new Date() };
+
+    // Parse sizes if they exist
+    if (updateData.sizes) {
+      let parsedSizes: { label: string; price: number }[] = [];
+      if (typeof updateData.sizes === "string") {
+        try {
+          parsedSizes = JSON.parse(updateData.sizes);
+        } catch (error) {
+          console.error("Error parsing sizes:", error);
+          res.status(400).json({ message: "Invalid sizes format" });
+          return;
+        }
+      } else {
+        parsedSizes = updateData.sizes;
+      }
+      updateData.sizes = parsedSizes;
+    }
+
+    // Ensure numeric fields are properly converted
+    if (updateData.price) updateData.price = Number(updateData.price);
+    if (updateData.stock) updateData.stock = Number(updateData.stock);
+    if (updateData.rating) updateData.rating = Number(updateData.rating);
+    if (updateData.reviewsCount) updateData.reviewsCount = Number(updateData.reviewsCount);
+    if (updateData.discount) updateData.discount = Number(updateData.discount);
+
+    // Handle image upload if a new image is provided
+    if (req.file) {
+      const result = await uploadToS3(req.file);
+      if (result?.Location) {
+        updateData.imageUrl = result.Location;
+      }
+    }
+
     const updated = await Perfume.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, updatedAt: new Date() },
+      productId,
+      updateData,
       { new: true }
     );
-    if (!updated) res.status(404).json({ error: "Product not found" });
+
+    if (!updated) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    // Clear Redis cache after updating product
+    await redisClient.clearCache();
 
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: "Failed to update product" });
+    console.error("Update product error:", err);
+    res.status(500).json({ 
+      error: "Failed to update product",
+      details: err instanceof Error ? err.message : "Unknown error"
+    });
   }
 };
 
@@ -125,10 +300,17 @@ export const deleteProduct = async (
 ): Promise<void> => {
   try {
     const deleted = await Perfume.findByIdAndDelete(req.params.id);
-    if (!deleted) res.status(404).json({ error: "Product not found" });
+    if (!deleted) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    // Clear Redis cache after deleting product
+    await redisClient.clearCache();
 
     res.json({ message: "Product deleted successfully" });
   } catch (err) {
+    console.error("Delete product error:", err);
     res.status(500).json({ error: "Failed to delete product" });
   }
 };

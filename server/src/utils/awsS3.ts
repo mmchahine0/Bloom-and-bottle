@@ -1,25 +1,23 @@
-import { S3 } from "aws-sdk";
-import { PutObjectRequest, ManagedUpload } from "aws-sdk/clients/s3";
+// utils/awsS3.ts
+import AWS from "aws-sdk";
+import { v4 as uuidv4 } from "uuid";
 
-const AWS = require("aws-sdk");
-
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY,
-  region: process.env.AWS_REGION,
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY!,
+  secretAccessKey: process.env.AWS_SECRET_KEY!,
+  region: process.env.AWS_REGION!,
 });
 
-const s3: S3 = new AWS.S3();
+export const uploadToS3 = (file: Express.Multer.File) => {
+  const fileExtension = file.originalname.split(".").pop();
+  const filename = `${uuidv4()}.${fileExtension}`;
 
-const uploadToS3 = async (params: PutObjectRequest): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    s3.upload(params, (error: Error | null, data: ManagedUpload.SendData) => {
-      if (error) reject(error);
-      resolve(data.Location);
-    });
-  });
-};
+  const params = {
+    Bucket: process.env.BUCKET_NAME!,
+    Key: filename,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
 
-module.exports = {
-  uploadToS3,
+  return s3.upload(params).promise();
 };

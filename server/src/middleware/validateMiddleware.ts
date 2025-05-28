@@ -9,13 +9,20 @@ export const validate = (
   return new Promise((resolve) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        errors: errors.array().map((err) => err.msg),
-      });
+      const error = new Error('Validation Error') as CustomError;
+      error.type = 'validation';
+      error.errors = errors.array().map((err) => err.msg);
+      error.statusCode = 400;
+      next(error);
       return resolve();
     }
     next();
     resolve();
   });
 };
+
+interface CustomError extends Error {
+  statusCode?: number;
+  errors?: string[];
+  type?: string;
+}
