@@ -13,8 +13,8 @@ export interface PaginationParams {
   featured?: boolean;
   limitedEdition?: boolean;
   comingSoon?: boolean;
-  priceMin?: number;
-  priceMax?: number;
+  minPrice?: number;
+  maxPrice?: number;
   dateFrom?: string;
   dateTo?: string;
   sortDirection?: "asc" | "desc";
@@ -38,27 +38,34 @@ export interface Notes {
   base: string[];
 }
 
-export interface Product {
-  id: string;
+export interface CreateProductInput {
   name: string;
   type: "perfume" | "sample";
-  sizes: Size[];
-  description: string;
+  sizes: { label: string; price: number }[];
+  description?: string;
   price: number;
-  imageUrl: string;
   category: "men" | "women" | "un";
   brand: string;
-  notes: Notes;
-  rating: number;
-  reviewsCount: number;
-  stock: number;
-  featured: boolean;
-  limitedEdition: boolean;
-  comingSoon: boolean;
-  discount: number;
-  createdBy: string; // User ID
-  createdAt: string;
-  updatedAt: string;
+  notes?: {
+    top: string[];
+    middle: string[];
+    base: string[];
+  };
+  stock?: number;
+  featured?: boolean;
+  limitedEdition?: boolean;
+  comingSoon?: boolean;
+  discount?: number;
+}
+
+export interface Product extends CreateProductInput {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+  imageUrl?: string;
+  rating?: number;
+  reviewsCount?: number;
 }
 
 export interface ProductWithCreator extends Omit<Product, "createdBy"> {

@@ -661,7 +661,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 <>
                   {/* Logged in: Show User, Cart, and Logout icons with labels */}
                   <Link
-                    to="/profile"
+                    to="/dashboard/profile"
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
                     aria-label="User profile"

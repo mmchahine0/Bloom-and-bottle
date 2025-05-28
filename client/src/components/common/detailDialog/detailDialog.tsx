@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -6,7 +5,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { OrderWithExtras } from "../../../features/admin/adminOrders/adminOrders.types"
+import { OrderWithExtras } from "../../../features/admin/adminOrders/adminOrders.types";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import {
@@ -101,7 +100,8 @@ export function DetailDialog({
                       order.status
                     )}`}
                   >
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
                   </span>
                   <Select
                     value={order.status}
@@ -137,16 +137,14 @@ export function DetailDialog({
               </TableHeader>
               <TableBody>
                 {order.items.map((item, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={`index-${index}`}>
                     <TableCell className="font-medium">
                       {item.product.name}
                     </TableCell>
                     <TableCell>{item.size}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{item.product.price}</TableCell>
-                    <TableCell>
-                      {item.product.price * item.quantity}
-                    </TableCell>
+                    <TableCell>{item.product.price * item.quantity}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow>

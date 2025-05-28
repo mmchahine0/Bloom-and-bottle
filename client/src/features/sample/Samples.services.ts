@@ -1,8 +1,8 @@
-import { ENDPOINTS } from "@/api/endpoints"
-import { SampleResponse, SampleFilters, Sample } from "./MenS.types"
+import type { SampleResponse, SampleFilters, Sample } from "./Samples.types"
 import { apiClient } from "@/api/base"
+import { ENDPOINTS } from "@/api/endpoints"
 
-export const getAllMenSamples = async (filters?: SampleFilters): Promise<SampleResponse> => {
+export const getAllSamples = async (filters?: SampleFilters): Promise<SampleResponse> => {
   const params = new URLSearchParams()
 
   if (filters) {
@@ -24,8 +24,8 @@ export const getAllMenSamples = async (filters?: SampleFilters): Promise<SampleR
   }
 
   const endpoint = params.toString()
-    ? `${ENDPOINTS.Products.Sample.GetMen}?${params.toString()}`
-    : ENDPOINTS.Products.Sample.GetMen
+    ? `${ENDPOINTS.Products.Sample.GetAll}?${params.toString()}`
+    : ENDPOINTS.Products.Sample.GetAll
 
   const response = await apiClient({
     method: "GET",
@@ -35,7 +35,8 @@ export const getAllMenSamples = async (filters?: SampleFilters): Promise<SampleR
   return response as SampleResponse
 }
 
-export const getMenSampleById = async (id: string): Promise<{ success: boolean; data: Sample }> => {
+// Get Single Sample Service
+export const getSampleById = async (id: string): Promise<{ success: boolean; data: Sample }> => {
   const response = await apiClient({
     method: "GET",
     endpoint: ENDPOINTS.Products.Sample.GetById(id),

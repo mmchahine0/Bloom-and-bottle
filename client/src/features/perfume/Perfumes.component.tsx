@@ -3,14 +3,14 @@ import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
 import { X, Loader, Filter, ChevronRight, ChevronLeft } from "lucide-react"
-import { getAllWomenSamples } from "./WomenS.services"
+import { getAllPerfumes } from "./Perfumes.sevices"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Filters } from "./WomenS.types"
+import { Filters } from "./Perfumes.types"
 
-const WomenSamplesPage: React.FC = () => {
+const AllPerfumesPage: React.FC = () => {
   // State
   const [filters, setFilters] = useState<Filters>({
     sort: "createdAt",
@@ -21,11 +21,11 @@ const WomenSamplesPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false)
   const [priceRange, setPriceRange] = useState<{ min?: number; max?: number }>({})
 
-  // Fetch samples
+  // Fetch perfumes
   const { data, isLoading, isError, refetch, error } = useQuery({
-    queryKey: ["women-samples", page, filters, priceRange],
+    queryKey: ["all-perfumes", page, filters, priceRange],
     queryFn: () =>
-      getAllWomenSamples({
+      getAllPerfumes({
         ...filters,
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
@@ -88,8 +88,8 @@ const WomenSamplesPage: React.FC = () => {
       <div className="bg-white shadow-sm">
         <div className="container mx-auto py-8 px-4">
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">Women's Sample Fragrances</h1>
-            <p className="text-gray-600">Explore our collection of women's sample fragrances</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">All Fragrances</h1>
+            <p className="text-gray-600">Explore our complete collection of exquisite perfumes</p>
           </div>
         </div>
       </div>
@@ -337,7 +337,7 @@ const WomenSamplesPage: React.FC = () => {
           <div className="flex justify-center items-center h-64">
             <div className="text-center">
               <Loader size={40} className="animate-spin text-blue-500 mx-auto mb-4" />
-              <p className="text-gray-600">Loading samples...</p>
+              <p className="text-gray-600">Loading perfumes...</p>
             </div>
           </div>
         ) : isError ? (
@@ -383,36 +383,36 @@ const WomenSamplesPage: React.FC = () => {
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {data?.data.map((sample) => (
+              {data?.data.map((perfume) => (
                 <Link
-                  key={sample._id}
-                  to={`/sample/${sample._id}`}
+                  key={perfume._id}
+                  to={`/perfume/${perfume._id}`}
                   className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
                 >
                   <div className="relative overflow-hidden">
-                    {sample.discount > 0 && (
+                    {perfume.discount > 0 && (
                       <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                        {sample.discount}% OFF
+                        {perfume.discount}% OFF
                       </div>
                     )}
-                    {sample.limitedEdition && (
+                    {perfume.limitedEdition && (
                       <div className="absolute top-3 right-3 bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
                         Limited
                       </div>
                     )}
-                    {sample.featured && (
+                    {perfume.featured && (
                       <div className="absolute bottom-3 left-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
                         Featured
                       </div>
                     )}
-                    {sample.comingSoon && (
+                    {perfume.comingSoon && (
                       <div className="absolute bottom-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
                         Coming Soon
                       </div>
                     )}
                     <img
-                      src={sample.imageUrl || "/placeholder.svg"}
-                      alt={sample.name}
+                      src={perfume.imageUrl || "/placeholder.svg"}
+                      alt={perfume.name}
                       className="w-full h-64 object-cover object-center group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                     />
@@ -421,24 +421,24 @@ const WomenSamplesPage: React.FC = () => {
 
                   <div className="p-4">
                     <div className="mb-2">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{sample.brand}</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{perfume.brand}</p>
                       <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 min-h-[3rem]">
-                        {sample.name}
+                        {perfume.name}
                       </h3>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-bold text-gray-900">${sample.price.toFixed(2)}</span>
-                        {sample.discount > 0 && (
+                        <span className="text-lg font-bold text-gray-900">${perfume.price.toFixed(2)}</span>
+                        {perfume.discount > 0 && (
                           <span className="text-sm text-gray-500 line-through">
-                            ${(sample.price / (1 - sample.discount / 100)).toFixed(2)}
+                            ${(perfume.price / (1 - perfume.discount / 100)).toFixed(2)}
                           </span>
                         )}
                       </div>
 
                       <div className="text-right">
-                        {sample.stock > 0 ? (
+                        {perfume.stock > 0 ? (
                           <span className="text-xs text-green-600 font-medium">In Stock</span>
                         ) : (
                           <span className="text-xs text-red-600 font-medium">Out of Stock</span>
@@ -446,8 +446,8 @@ const WomenSamplesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {sample.description && (
-                      <p className="text-xs text-gray-600 mt-2 line-clamp-2">{sample.description}</p>
+                    {perfume.description && (
+                      <p className="text-xs text-gray-600 mt-2 line-clamp-2">{perfume.description}</p>
                     )}
                   </div>
                 </Link>
@@ -507,4 +507,4 @@ const WomenSamplesPage: React.FC = () => {
   )
 }
 
-export default WomenSamplesPage
+export default AllPerfumesPage

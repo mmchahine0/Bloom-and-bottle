@@ -11,18 +11,25 @@ export const ENDPOINTS = {
   },
 
   Products: {
+    GetAll: "/user/products", // supports filters
+    GetAllAdmin: "/admin/products",
+    GetByIdAdmin: (id: string) => `/admin/product/${id}`,
     Perfume: {
       Base: "/perfumes",
-      GetAll: "/perfumes", // supports filters
+      GetAll: "/perfumes",
       GetById: (id: string) => `/perfumes/${id}`,
+      GetMen: "/perfumes/men",
+      GetWomen: "/perfumes/women",
       Create: "/admin/perfumes",
       Update: (id: string) => `/admin/perfumes/${id}`,
       Delete: (id: string) => `/admin/perfumes/${id}`,
     },
     Sample: {
       Base: "/samples",
-      GetAll: "/samples", // supports filters
+      GetAll: "/samples",
       GetById: (id: string) => `/samples/${id}`,
+      GetMen: "/samples/men",
+      GetWomen: "/samples/women",
       Create: "/admin/samples",
       Update: (id: string) => `/admin/samples/${id}`,
       Delete: (id: string) => `/admin/samples/${id}`,
@@ -69,7 +76,20 @@ export const ENDPOINTS = {
 
   Homepage: {
     Get: "/homepage",
-    Update: "/admin/homepage",
+    Collections: {
+      GetAll: "/collections",
+      GetById: (id: string) => `/collections/${id}`,
+      Create: "/collections",
+      Update: (id: string) => `/collections/${id}`,
+      Delete: (id: string) => `/collections/${id}`,
+    },
+    Testimonials: {
+      GetAll: "/testimonials",
+      GetById: (id: string) => `/testimonials/${id}`,
+      Create: "/testimonials",
+      Update: (id: string) => `/testimonials/${id}`,
+      Delete: (id: string) => `/testimonials/${id}`,
+    },
   },
 
   Feedbacks: {

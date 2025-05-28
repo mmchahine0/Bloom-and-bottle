@@ -4,10 +4,10 @@ import {
   Home,
   User2,
   Users,
-  Laptop,
   HousePlus,
   LogOut,
   StickyNote,
+  House
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import * as sidebar from "@/components/ui/sidebar";
@@ -58,20 +58,22 @@ const adminItems = [
     title: "Orders Management",
     url: "/dashboard/admin/orders",
     icon: StickyNote,
-    description: "Customize site layout",
+    description: "Check and manage orders",
   },
   {
-    title: "Perfumes Management",
-    url: "/dashboard/admin/perfumes",
-    icon: HousePlus,
-    description: "Manage homepage content",
+    title: "Homepage Management",
+    url: "/dashboard/admin/homepage",
+    icon: House,
+    description: "Manage products",
   },
   {
-    title: "Samples Management",
-    url: "/dashboard/admin/samples",
+    title: "Products Management",
+    url: "/dashboard/admin/products",
     icon: HousePlus,
-    description: "Manage homepage content",
+    description: "Manage products",
   },
+  
+
 ];
 
 export function AppSidebar({ username, role, isOpen }: AppSidebarProps) {

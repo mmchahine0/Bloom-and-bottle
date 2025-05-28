@@ -3,14 +3,14 @@ import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
 import { X, Loader, Filter, ChevronRight, ChevronLeft } from "lucide-react"
-import { getAllWomenSamples } from "./WomenS.services"
+import { getAllSamples } from "./Samples.services"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Filters } from "./WomenS.types"
+import { Filters } from "./Samples.types"
 
-const WomenSamplesPage: React.FC = () => {
+const AllSamplesPage: React.FC = () => {
   // State
   const [filters, setFilters] = useState<Filters>({
     sort: "createdAt",
@@ -23,9 +23,9 @@ const WomenSamplesPage: React.FC = () => {
 
   // Fetch samples
   const { data, isLoading, isError, refetch, error } = useQuery({
-    queryKey: ["women-samples", page, filters, priceRange],
+    queryKey: ["all-samples", page, filters, priceRange],
     queryFn: () =>
-      getAllWomenSamples({
+      getAllSamples({
         ...filters,
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
@@ -88,8 +88,8 @@ const WomenSamplesPage: React.FC = () => {
       <div className="bg-white shadow-sm">
         <div className="container mx-auto py-8 px-4">
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">Women's Sample Fragrances</h1>
-            <p className="text-gray-600">Explore our collection of women's sample fragrances</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">All Samples</h1>
+            <p className="text-gray-600">Discover our collection of sample fragrances</p>
           </div>
         </div>
       </div>
@@ -507,4 +507,4 @@ const WomenSamplesPage: React.FC = () => {
   )
 }
 
-export default WomenSamplesPage
+export default AllSamplesPage

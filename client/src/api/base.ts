@@ -25,12 +25,16 @@ export const apiClient = async ({
   params,
   accessToken,
 }: ApiOptions): Promise<unknown> => {
+  
+  // Determine if we're sending FormData
+  const isFormData = data instanceof FormData;
+  
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
   };
 
   if (accessToken) {
-    headers["Authorization"] = `Bearer ${accessToken}`;
+    headers.Authorization = `Bearer ${accessToken}`;
   }
 
   const options = {
@@ -38,7 +42,7 @@ export const apiClient = async ({
     url: `${BASE_URL}${endpoint}`,
     headers,
     params,
-    data,
+    data: isFormData ? data : JSON.stringify(data),
   };
 
   try {
@@ -73,12 +77,65 @@ export const apiClient = async ({
         window.location.reload();
         return response.data;
       } catch (refreshError) {
-        console.error("Refresh token error:", refreshError);
+        console.error("Refresh token error:", {
+          error: refreshError,
+          message: axios.isAxiosError(refreshError) ? refreshError.message : 'Unknown error',
+          response: axios.isAxiosError(refreshError) ? refreshError.response?.data : null,
+          status: axios.isAxiosError(refreshError) ? refreshError.response?.status : null
+        });
         store.dispatch(clearCredentials());
         store.dispatch(clearUserData());
         throw refreshError;
       }
     }
+    
+    // Enhanced error logging
+    if (axios.isAxiosError(error)) {
+      const errorResponse = error.response?.data;
+      const errorDetails = {
+        // Request details
+        request: {
+          method: options.method,
+          url: options.url,
+          headers: options.headers,
+          data: options.data,
+          params: options.params
+        },
+        // Response details
+        response: {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: errorResponse,
+          headers: error.response?.headers
+        },
+        // Error details
+        error: {
+          message: error.message,
+          code: error.code,
+          name: error.name
+        },
+        // Additional context
+        context: {
+          endpoint,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      console.error("API Error Details:", errorDetails);
+      throw error;
+    }
+
+    // Handle non-Axios errors
+    console.error("Non-Axios Error:", {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : null,
+      context: {
+        endpoint,
+        timestamp: new Date().toISOString()
+      }
+    });
+
     throw error;
   }
-};
+}

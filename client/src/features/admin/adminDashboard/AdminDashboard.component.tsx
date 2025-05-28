@@ -338,7 +338,10 @@ const AdminDashboard = () => {
                   </TableRow>
                 ) : (
                   data?.data.map((user: User) => (
-                    <TableRow key={user.id} aria-label={`User: ${user.name}`}>
+                    <TableRow
+                      key={`user.id-${user}`}
+                      aria-label={`User: ${user.name}`}
+                    >
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.role}</TableCell>
@@ -411,7 +414,7 @@ const AdminDashboard = () => {
           ) : (
             <ul className="space-y-4" role="list">
               {data?.data.map((user: User) => (
-                <li key={user.id} role="listitem">
+                <li key={`user-${user.id}`} role="listitem">
                   <UserCard user={user} />
                 </li>
               ))}
