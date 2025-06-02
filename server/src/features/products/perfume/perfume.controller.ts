@@ -110,10 +110,10 @@ export const updateStock = async (
 
     const { stock } = req.body;
 
-    if (typeof stock !== "number" || stock < 0) {
+    if (typeof stock !== "boolean") {
       res.status(400).json({
         success: false,
-        message: "Stock must be a non-negative number",
+        message: "Stock must be a boolean value",
       });
       return;
     }

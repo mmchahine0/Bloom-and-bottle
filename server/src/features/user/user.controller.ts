@@ -50,8 +50,6 @@ export const getUserProfile = async (
       return;
     }
 
-    // Cache the user data
-    await redisClient.set(cacheKey, user);
 
     res.json({
       statusCode: 200,

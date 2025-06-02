@@ -55,7 +55,6 @@ export const getAllUsers = async (
         totalItems: totalUsers,
       },
     };
-    await redisClient.set(cacheKey, responseData);
 
     res.json(responseData);
   } catch (error: unknown) {

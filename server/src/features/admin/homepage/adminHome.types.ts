@@ -1,4 +1,4 @@
- // Frontend expected types
+// Frontend expected types
 export interface FeaturedItem {
     _id: string;
     name: string;
@@ -78,7 +78,7 @@ export interface FeaturedItem {
     };
     rating: number;
     reviewsCount: number;
-    stock: number;
+    stock: boolean;
     featured: boolean;
     limitedEdition: boolean;
     comingSoon: boolean;

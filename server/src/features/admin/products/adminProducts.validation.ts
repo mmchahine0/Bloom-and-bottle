@@ -101,8 +101,8 @@ export const createPerfumeValidation = () => [
   // Numeric fields
   body("stock")
     .optional()
-    .isInt({ min: 0, max: 10000 })
-    .withMessage("Stock must be a non-negative integer between 0 and 10000"),
+    .isBoolean()
+    .withMessage("Stock must be a boolean value indicating product availability"),
 
   body("rating")
     .optional()

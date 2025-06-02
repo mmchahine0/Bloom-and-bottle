@@ -5,7 +5,12 @@ import redisClient from "../../../utils/redis";
 
 // Utility: build dynamic filters
 const buildFilters = (query: any): any => {
-  const filters: any = {};
+  
+  // Safety check: ensure query is an object
+  if (typeof query === 'function' || !query || typeof query !== 'object') {
+    return {};
+  }
+  let filters: any = {};
 
   if (query.type) filters.type = query.type;
   if (query.category) {
@@ -40,14 +45,17 @@ const buildFilters = (query: any): any => {
     if (query.dateTo) filters.createdAt.$lte = new Date(query.dateTo);
   }
   
-  if (query.search) {
+  if (query.search && query.search.trim() !== '') {
+    const searchTerm = query.search.trim();
+    
     // Enhanced search to include both name and brand
     filters.$or = [
-      { name: { $regex: query.search, $options: "i" } },
-      { brand: { $regex: query.search, $options: "i" } }
+      { name: { $regex: searchTerm, $options: "i" } },
+      { brand: { $regex: searchTerm, $options: "i" } }
     ];
+    
   }
-
+  
   return filters;
 };
 
@@ -58,14 +66,19 @@ export const getAllProducts = async (
   customQuery?: any
 ): Promise<void> => {
   try {
+    const queryObject = (customQuery && typeof customQuery === 'object' && typeof customQuery !== 'function') 
+      ? customQuery 
+      : req.query;
+    
     const {
       page = 1,
       limit = 10,
       sortBy = "createdAt",
       sortDirection = "desc",
-    } = customQuery || req.query;
+    } = queryObject;
 
-    const filters = buildFilters(customQuery || req.query);
+
+    const filters = buildFilters(queryObject);
     
     const sortOption = {
       [sortBy as string]: sortDirection === "asc" ? 1 : -1,
@@ -139,7 +152,7 @@ export const createProduct = async (
       notes,
       rating = 0,
       reviewsCount = 0,
-      stock = 0,
+      stock = false,
       featured = false,
       limitedEdition = false,
       comingSoon = false,
@@ -174,7 +187,7 @@ export const createProduct = async (
       notes,
       rating: Number(rating) || 0,
       reviewsCount: Number(reviewsCount) || 0,
-      stock: Number(stock) || 0,
+      stock: Boolean(stock),
       featured: Boolean(featured),
       limitedEdition: Boolean(limitedEdition),
       comingSoon: Boolean(comingSoon),
@@ -256,7 +269,7 @@ export const updateProduct = async (
 
     // Ensure numeric fields are properly converted
     if (updateData.price) updateData.price = Number(updateData.price);
-    if (updateData.stock) updateData.stock = Number(updateData.stock);
+    if (updateData.stock !== undefined) updateData.stock = Boolean(updateData.stock);
     if (updateData.rating) updateData.rating = Number(updateData.rating);
     if (updateData.reviewsCount) updateData.reviewsCount = Number(updateData.reviewsCount);
     if (updateData.discount) updateData.discount = Number(updateData.discount);

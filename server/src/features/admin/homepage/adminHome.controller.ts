@@ -12,16 +12,16 @@ export const getHomepageData = async (req: Request, res: Response): Promise<void
       .select('name brand price sizes imageUrl type')
       .lean();
 
-    // Get all collections with their perfumes
-    const collections = await Collection.find()
+    // Get featured collections with their perfumes
+    const collections = await Collection.find({ featured: true })
       .populate({
         path: 'perfumes',
         select: 'name imageUrl'
       })
       .lean();
 
-    // Get all testimonials
-    const testimonials = await Testimonial.find()
+    // Get featured testimonials
+    const testimonials = await Testimonial.find({ featured: true })
       .select('imageUrl')
       .lean();
 

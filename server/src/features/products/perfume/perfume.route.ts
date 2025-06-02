@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-    getPerfumeById,
   getAllSamples,
   getPerfumesForMen,
   getPerfumesForWomen,
@@ -9,7 +8,7 @@ import {
   getAllPerfumes,
 } from "../perfume/perfume.controller";
 
-import {getAllProducts} from "../../admin/products/adminProducts.controller"
+import {getAllProducts, getProductById} from "../../admin/products/adminProducts.controller"
 
 import { validate } from "../../../middleware/validateMiddleware";
 
@@ -25,7 +24,7 @@ router.get("/perfumes", getAllPerfumes);
 router.get("/samples", getAllSamples);
 
 // Parameterized routes last
-router.get("/perfumes/:id", getPerfumeById);
+router.get("/user/product/:id", getProductById);
 router.get("/user/products", getAllProducts);
 
 export default router;

@@ -23,7 +23,7 @@ const perfumeSchema = new Schema({
   }, // scent notes like "Citrus", "Vanilla"
   rating: { type: Number, default: 0 }, // 0-5 stars
   reviewsCount: { type: Number, default: 0 }, // number of reviews
-  stock: { type: Number, default: 0 }, // number of items in stock
+  stock: { type: Boolean, default: true }, // product availability
   featured: { type: Boolean, default: false }, // for homepage "Featured" section
   limitedEdition: { type: Boolean, default: false }, // if limited edition
   comingSoon: { type: Boolean, default: false }, // if coming soon
