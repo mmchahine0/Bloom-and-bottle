@@ -281,8 +281,8 @@ const AdminDashboard = () => {
                 <SelectValue placeholder="10" />
               </SelectTrigger>
               <SelectContent>
-                {[5, 10, 20, 30, 50].map((size) => (
-                  <SelectItem key={size} value={size.toString()}>
+                {[5, 10, 20, 30, 50].map((size, index) => (
+                  <SelectItem key={`${size}-${index}`} value={size.toString()}>
                     {size} rows
                   </SelectItem>
                 ))}
@@ -337,9 +337,9 @@ const AdminDashboard = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data?.data.map((user: User) => (
+                  data?.data.map((user: User, index) => (
                     <TableRow
-                      key={`user.id-${user}`}
+                      key={`user.id-${user}-${index}`}
                       aria-label={`User: ${user.name}`}
                     >
                       <TableCell className="font-medium">{user.name}</TableCell>
@@ -413,8 +413,8 @@ const AdminDashboard = () => {
             <LoadingSpinner size="lg" label="Loading users..." />
           ) : (
             <ul className="space-y-4" role="list">
-              {data?.data.map((user: User) => (
-                <li key={`user-${user.id}`} role="listitem">
+              {data?.data.map((user: User,index) => (
+                <li key={`user-${user.id}-${index}`} role="listitem">
                   <UserCard user={user} />
                 </li>
               ))}

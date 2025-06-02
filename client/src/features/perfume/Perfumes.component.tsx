@@ -386,7 +386,7 @@ const AllPerfumesPage: React.FC = () => {
               {data?.data.map((perfume) => (
                 <Link
                   key={perfume._id}
-                  to={`/perfume/${perfume._id}`}
+                  to={`/product/${perfume._id}`}
                   className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
                 >
                   <div className="relative overflow-hidden">
@@ -438,7 +438,7 @@ const AllPerfumesPage: React.FC = () => {
                       </div>
 
                       <div className="text-right">
-                        {perfume.stock > 0 ? (
+                        {perfume.stock ? (
                           <span className="text-xs text-green-600 font-medium">In Stock</span>
                         ) : (
                           <span className="text-xs text-red-600 font-medium">Out of Stock</span>

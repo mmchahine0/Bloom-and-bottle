@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/persist/persist";
 import { Link } from "react-router-dom";
 import { queryClient } from "@/lib/queryClient";
-import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,6 +19,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import logo from "@/assets/logoSlim.png";
+import { searchProducts } from "@/features/search/search.services";
+import { ProductWithCreator } from "@/features/admin/adminProducts/adminProducts.types";
 
 interface NavbarProps {
   customLinks?: {
@@ -28,11 +29,7 @@ interface NavbarProps {
     visibility: "logged-in" | "logged-out" | "all" | "admin";
   }[];
 }
-interface Product {
-  slug: string;
-  name: string;
-  imageUrl?: string;
-}
+
 const array = [
   "All Perfumes are 100% Authentic",
   "Pay Cash on Delivery",
@@ -47,16 +44,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [perfumesMenuOpen, setPerfumesMenuOpen] = useState(false);
   const [samplesMenuOpen, setSamplesMenuOpen] = useState(false);
-
-  const [searchResults, setSearchResults] = useState<{
-    suggestions: string[];
-    pages: { url: string; title: string }[];
-    products: Product[];
-  }>({
-    suggestions: [],
-    pages: [],
-    products: [],
-  });
+  const [searchResults, setSearchResults] = useState<ProductWithCreator[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -64,6 +52,8 @@ const Navbar: React.FC<NavbarProps> = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const perfumesMenuRef = useRef<HTMLDivElement>(null);
   const samplesMenuRef = useRef<HTMLDivElement>(null);
+  const currentSearchRef = useRef<string>("");
+
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -220,40 +210,33 @@ const Navbar: React.FC<NavbarProps> = () => {
   // Function to handle the search
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
-      setSearchResults({
-        suggestions: [],
-        pages: [],
-        products: [],
-      });
+      setSearchResults([]);
+      setIsLoading(false);
       return;
     }
-
+  
+    // Store the current search query
+    currentSearchRef.current = query;
     setIsLoading(true);
+  
     try {
-      // Replace these endpoints with your actual API endpoints
-      const suggestionsPromise = axios.get(
-        `/api/search/suggestions?q=${encodeURIComponent(query)}`
-      );
-      const pagesPromise = axios.get(
-        `/api/search/pages?q=${encodeURIComponent(query)}`
-      );
-      const productsPromise = axios.get(
-        `/api/search/products?q=${encodeURIComponent(query)}`
-      );
-
-      const [suggestionsResponse, pagesResponse, productsResponse] =
-        await Promise.all([suggestionsPromise, pagesPromise, productsPromise]);
-
-      setSearchResults({
-        suggestions: suggestionsResponse.data || [],
-        pages: pagesResponse.data || [],
-        products: productsResponse.data || [],
+      const response = await searchProducts({
+        page: 1,
+        limit: 5,
+        search: query,
       });
+      
+      // Only update results if this is still the current search
+      if (currentSearchRef.current === query) {
+        setSearchResults(response.data);
+      }
     } catch (error) {
       console.error("Error fetching search results:", error);
-      // Handle error - could set an error state here
     } finally {
-      setIsLoading(false);
+      // Only set loading to false if this is still the current search
+      if (currentSearchRef.current === query) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -262,10 +245,17 @@ const Navbar: React.FC<NavbarProps> = () => {
     const timer = setTimeout(() => {
       if (isSearchOpen && searchQuery) {
         handleSearch(searchQuery);
+      } else if (isSearchOpen && !searchQuery) {
+        // Clear results immediately when query is empty
+        currentSearchRef.current = "";
+        setSearchResults([]);
+        setIsLoading(false);
       }
     }, 300);
-
-    return () => clearTimeout(timer);
+  
+    return () => {
+      clearTimeout(timer);
+    };
   }, [searchQuery, isSearchOpen]);
 
   // Focus search input when search popup opens
@@ -276,12 +266,10 @@ const Navbar: React.FC<NavbarProps> = () => {
   }, [isSearchOpen]);
 
   const clearSearch = () => {
+    currentSearchRef.current = ""; // Clear the current search ref
     setSearchQuery("");
-    setSearchResults({
-      suggestions: [],
-      pages: [],
-      products: [],
-    });
+    setSearchResults([]);
+    setIsLoading(false);
   };
 
   const toggleSearch = () => {
@@ -314,7 +302,7 @@ const Navbar: React.FC<NavbarProps> = () => {
             >
               {array.map((item, index) => (
                 <span
-                  key={index}
+                  key={`${item}-${index}`}
                   className="w-full flex-shrink-0 text-center font-bold text-[#ecbdc6] font-mono"
                 >
                   {item}
@@ -733,7 +721,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                     <input
                       ref={searchInputRef}
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search products..."
                       className="flex-1 bg-transparent border-none p-2 text-white focus:outline-none"
                       aria-label="Search input"
                       value={searchQuery}
@@ -760,130 +748,55 @@ const Navbar: React.FC<NavbarProps> = () => {
 
                 {/* Loading indicator */}
                 {isLoading && (
-                  <div className="flex justify-center items-center py-8">
+                  <div className="flex justify-center items-center py-4">
                     <div className="w-6 h-6 border-2 border-t-[#ecbdc6] border-r-[#ecbdc6] border-b-transparent border-l-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
 
-                {/* Search content with two columns - only show if we have results */}
-                {!isLoading &&
-                  (searchResults.suggestions.length > 0 ||
-                    searchResults.pages.length > 0 ||
-                    searchResults.products.length > 0) && (
-                    <div className="flex mt-2">
-                      {/* Left column - Suggestions */}
-                      <div className="w-1/2 pr-6 border-r border-gray-800">
-                        {searchResults.suggestions.length > 0 && (
-                          <>
-                            <h3 className="uppercase text-xs font-semibold text-gray-400 mb-3">
-                              SUGGESTIONS
-                            </h3>
-                            <ul className="space-y-3">
-                              {searchResults.suggestions.map(
-                                (suggestion, index) => (
-                                  <li key={`suggestion-${index}`}>
-                                    <button
-                                      className="w-full text-left text-[#ecbdc6] hover:text-white text-sm"
-                                      onClick={() => setSearchQuery(suggestion)}
-                                    >
-                                      {suggestion}
-                                    </button>
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </>
-                        )}
-
-                        {searchResults.pages.length > 0 && (
-                          <>
-                            <h3 className="uppercase text-xs font-semibold text-gray-400 mt-6 mb-3">
-                              PAGES
-                            </h3>
-                            <ul className="space-y-3">
-                              {searchResults.pages.map((page, index) => (
-                                <li key={`page-${index}`}>
-                                  <Link
-                                    to={page.url}
-                                    className="w-full text-left text-[#ecbdc6] hover:text-white text-sm block"
-                                    onClick={() => setIsSearchOpen(false)}
-                                  >
-                                    {page.title}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-
-                        {searchQuery && (
-                          <div className="mt-6">
-                            <Link
-                              to={`/search?q=${encodeURIComponent(
-                                searchQuery
-                              )}`}
-                              className="flex items-center text-[#ecbdc6] hover:text-white text-sm"
-                              onClick={() => setIsSearchOpen(false)}
-                            >
-                              Search for "{searchQuery}"
-                              <ChevronRight size={16} className="ml-2" />
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right column - Products */}
-                      {searchResults.products.length > 0 && (
-                        <div className="w-1/2 pl-6">
-                          <h3 className="uppercase text-xs font-semibold text-gray-400 mb-3">
-                            PRODUCTS
-                          </h3>
-                          <ul className="space-y-4">
-                            {searchResults.products.map((product, index) => (
-                              <li key={`product-${index}`}>
-                                <Link
-                                  to={`/product/${product.slug}`}
-                                  className="flex items-center group"
-                                  onClick={() => setIsSearchOpen(false)}
-                                >
-                                  <div className="w-12 h-12 bg-[#110000] flex items-center justify-center mr-3 rounded overflow-hidden">
-                                    {product.imageUrl ? (
-                                      <img
-                                        src={product.imageUrl}
-                                        alt={product.name}
-                                        className="max-h-10 max-w-10 object-contain"
-                                      />
-                                    ) : (
-                                      <div className="w-10 h-10 bg-gray-800 rounded"></div>
-                                    )}
-                                  </div>
-                                  <span className="text-[#ecbdc6] group-hover:text-white text-sm">
-                                    {product.name}
-                                  </span>
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
+                {/* Search Results */}
+                {!isLoading && searchResults.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {searchResults.map((product, index) => (
+                      <Link
+                        key={`${product.id}-${index}`}
+                        to={`/product/${product._id}`}
+                        className="flex items-center gap-3 p-2 hover:bg-gray-900 rounded-md transition-colors"
+                        onClick={() => setIsSearchOpen(false)}
+                      >
+                        <div className="w-12 h-12 bg-[#110000] flex items-center justify-center rounded overflow-hidden flex-shrink-0">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-800"></div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#ecbdc6] font-medium truncate">{product.name}</p>
+                          <p className="text-sm text-gray-400 truncate">{product.brand}</p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <p className="text-[#ecbdc6] font-medium">${product.price}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
                 {/* No results state */}
-                {!isLoading &&
-                  searchQuery &&
-                  !searchResults.suggestions.length &&
-                  !searchResults.pages.length &&
-                  !searchResults.products.length && (
-                    <div className="py-8 text-center text-gray-400">
-                      No results found for "{searchQuery}"
-                    </div>
-                  )}
+                {!isLoading && searchQuery && searchResults.length === 0 && (
+                  <div className="py-4 text-center text-gray-400">
+                    No products found for "{searchQuery}"
+                  </div>
+                )}
 
-                {/* Initial state - when search is opened but no query yet */}
+                {/* Initial state */}
                 {!isLoading && !searchQuery && (
-                  <div className="py-8 text-center text-gray-400">
-                    Type to search for products, collections, and pages
+                  <div className="py-4 text-center text-gray-400">
+                    Type to search for products
                   </div>
                 )}
               </div>

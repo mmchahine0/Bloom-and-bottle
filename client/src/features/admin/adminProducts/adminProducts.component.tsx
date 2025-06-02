@@ -265,27 +265,27 @@ const ProductsDashboard = () => {
       stock,
     }: {
       productId: string;
-      stock: number;
+      stock: boolean;
     }) => updateStock(productId, stock, accessToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setStatusMessage({
         type: "success",
-        message: "Stock updated successfully",
+        message: "Stock availability updated successfully",
       });
       toast({
         title: "Success",
-        description: "Stock updated successfully",
+        description: "Stock availability updated successfully",
       });
     },
     onError: () => {
       setStatusMessage({
         type: "error",
-        message: "Failed to update stock",
+        message: "Failed to update stock availability",
       });
       toast({
         title: "Failed",
-        description: "Failed to update stock",
+        description: "Failed to update stock availability",
         variant: "destructive",
       });
     },
@@ -367,7 +367,7 @@ const ProductsDashboard = () => {
     });
   };
 
-  const handleUpdateStock = (product: ProductWithCreator, newStock: number) => {
+  const handleUpdateStock = (product: ProductWithCreator, newStock: boolean) => {
     stockMutation.mutate({
       productId: product.id,
       stock: newStock,
@@ -410,14 +410,8 @@ const ProductsDashboard = () => {
   const totalPages = isLoading ? 1 : Math.ceil((data?.pagination?.totalItems || 0) / pageSize);
 
   // Get stock status badge class based on stock level
-  const getStockBadgeClass = (stock: number) => {
-    if (stock <= 0) {
-      return "bg-red-100 text-red-800";
-    } else if (stock < 10) {
-      return "bg-yellow-100 text-yellow-800";
-    } else {
-      return "bg-green-100 text-green-800";
-    }
+  const getStockBadgeClass = (stock: boolean | undefined) => {
+    return stock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
   // Get category badge class
@@ -495,10 +489,10 @@ const ProductsDashboard = () => {
                 <span className="text-gray-600">Stock: </span>
                 <span
                   className={`font-medium ${
-                    product.stock && product.stock <= 0 ? "text-red-600" : ""
+                    !product.stock ? "text-red-600" : ""
                   }`}
                 >
-                  {product.stock}
+                  {product.stock ? "In Stock" : "Out of Stock"}
                 </span>
               </div>
             </div>
@@ -567,6 +561,16 @@ const ProductsDashboard = () => {
   useEffect(() => {
     setSaveLoading(updateMutation.isPending || createMutation.isPending);
   }, [updateMutation.isPending, createMutation.isPending]);
+
+  // Handle stock update
+  const handleStockUpdate = (product: ProductWithCreator, newStock: boolean) => {
+    handleUpdateStock(product, newStock);
+  };
+
+  // Remove the stock comparison since we're using boolean now
+  const getStockStatus = (stock: boolean | undefined) => {
+    return stock ? "In Stock" : "Out of Stock";
+  };
 
   return (
     <>
@@ -932,8 +936,8 @@ const ProductsDashboard = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStockBadgeClass(product.stock ?? 0)}>
-                          {product.stock}
+                        <Badge className={getStockBadgeClass(product.stock ?? false)}>
+                          {getStockStatus(product.stock)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -1097,7 +1101,7 @@ const ProductsDashboard = () => {
           }
           product={detailDialog.product}
           onToggleFeatured={handleToggleFeatured}
-          onUpdateStock={handleUpdateStock}
+          onUpdateStock={handleStockUpdate}
         />
 
         {/* Product Edit Dialog */}

@@ -141,7 +141,7 @@ export const toggleFeaturedStatus = async (
 // Update stock
 export const updateStock = async (
   productId: string,
-  stock: number,
+  stock: boolean,
   accessToken: string
 ): Promise<ProductsResponse> => {
   const response = await apiClient({

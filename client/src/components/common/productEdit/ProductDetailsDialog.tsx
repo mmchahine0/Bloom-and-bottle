@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { ProductWithCreator } from "../../../features/admin/adminProducts/adminProducts.types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,7 +19,7 @@ interface ProductDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   product: ProductWithCreator | null;
   onToggleFeatured: (product: ProductWithCreator) => void;
-  onUpdateStock: (product: ProductWithCreator, newStock: number) => void;
+  onUpdateStock: (product: ProductWithCreator, newStock: boolean) => void;
 }
 
 export const ProductDetailsDialog = ({
@@ -30,18 +29,9 @@ export const ProductDetailsDialog = ({
   onToggleFeatured,
   onUpdateStock,
 }: ProductDetailsDialogProps) => {
-  const [newStock, setNewStock] = useState<string>("");
   const [activeTab, setActiveTab] = useState("details");
 
   if (!product) return null;
-
-  // Reset stock input when dialog opens/closes
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setNewStock("");
-    }
-    onOpenChange(open);
-  };
 
   // Format price with currency
   const formatPrice = (price: number) => {
@@ -50,7 +40,7 @@ export const ProductDetailsDialog = ({
 
   // Calculate discounted price
   const discountedPrice = product.discount
-    ? product.price * (1 - product.discount / 100)
+    ? product.price * (1 - (product.discount || 0) / 100)
     : product.price;
 
   // Get category badge class
@@ -75,14 +65,8 @@ export const ProductDetailsDialog = ({
   };
 
   // Get stock status badge class based on stock level
-  const getStockBadgeClass = (stock: number) => {
-    if (stock <= 0) {
-      return "bg-red-100 text-red-800";
-    } else if (stock < 10) {
-      return "bg-yellow-100 text-yellow-800";
-    } else {
-      return "bg-green-100 text-green-800";
-    }
+  const getStockBadgeClass = (stock: boolean) => {
+    return stock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
   // Format date relative to now
@@ -96,7 +80,7 @@ export const ProductDetailsDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -140,7 +124,7 @@ export const ProductDetailsDialog = ({
                   <span className="text-sm font-medium">Price:</span>
                   <div className="flex items-center gap-2">
                     <span>{formatPrice(product.price)}</span>
-                    {product.discount > 0 && (
+                    {product.discount && product.discount > 0 && (
                       <>
                         <span className="text-red-600">
                           -{product.discount}%
@@ -185,34 +169,22 @@ export const ProductDetailsDialog = ({
             <TabsContent value="inventory" className="space-y-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Current Stock:</span>
-                  <Badge className={getStockBadgeClass(product.stock)}>
-                    {product.stock} units
+                  <span className="text-sm font-medium">Current Availability:</span>
+                  <Badge className={getStockBadgeClass(product.stock || false)}>
+                    {product.stock ? "In Stock" : "Out of Stock"}
                   </Badge>
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-sm font-medium">Update Stock:</span>
+                  <span className="text-sm font-medium">Update Availability:</span>
                   <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={newStock}
-                      onChange={(e) => setNewStock(e.target.value)}
-                      placeholder="Enter new stock level"
-                      min="0"
-                      className="w-40"
-                    />
                     <Button
                       onClick={() => {
-                        const stockNum = parseInt(newStock, 10);
-                        if (!isNaN(stockNum) && stockNum >= 0) {
-                          onUpdateStock(product, stockNum);
-                          setNewStock("");
-                        }
+                        onUpdateStock(product, !product.stock);
                       }}
-                      disabled={!newStock}
+                      variant={product.stock ? "destructive" : "default"}
                     >
-                      Update
+                      {product.stock ? "Mark as Out of Stock" : "Mark as In Stock"}
                     </Button>
                   </div>
                 </div>
@@ -224,7 +196,7 @@ export const ProductDetailsDialog = ({
                 {product.updatedAt && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Last Updated:</span>
-                    <span>{formatRelativeDate(product.updatedAt)}</span>
+                    <span>{formatRelativeDate(product.updatedAt.toString())}</span>
                   </div>
                 )}
               </div>

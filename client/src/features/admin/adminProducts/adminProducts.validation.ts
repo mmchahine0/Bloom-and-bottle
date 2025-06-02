@@ -17,9 +17,7 @@ export const productFormSchema = z.object({
   brand: z.string().min(1, {
     message: "Brand is required.",
   }),
-  stock: z.number().int().min(0, {
-    message: "Stock must be a positive integer.",
-  }),
+  stock: z.boolean().default(true),
   featured: z.boolean().default(false),
   limitedEdition: z.boolean().default(false),
   comingSoon: z.boolean().default(false),

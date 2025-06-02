@@ -12,8 +12,9 @@ import Samples from "@/features/sample/Samples.component"
 import Cart from "@/features/cart/Cart.component";
 import OrdersDashboard from "@/features/admin/adminOrders/adminOrders.component";
 import AdminProducts from "@/features/admin/adminProducts/adminProducts.component";
-import AdminHomepage from "@/features/admin/adminHome/adminHome.component"
+import CollectionsDashboard from "@/features/admin/adminCollection/adminCollection.component"
 import Aboutus from "@/features/about/About.component"
+import ProductDetail from "@/features/product/Product.component";
 
 export interface RouteConfig {
   path: string;
@@ -45,8 +46,9 @@ export const publicRoutes: RouteConfig[] = [
   { path: "/perfumes/men", component: MenPerfumesPage, layout: "base" },
   { path: "/perfumes/women", component: WomenPerfumesPage, layout: "base" },
   { path: "/samples/men", component: MenSamplesPage, layout: "base" },
- { path: "/samples/women", component: WomenSamplesPage, layout: "base" },
+  { path: "/samples/women", component: WomenSamplesPage, layout: "base" },
   { path: "/samples", component: Samples, layout: "base" },
+  { path: "/product/:id", component: ProductDetail, layout: "base" },
 ];
 
 // Routes that require user authentication
@@ -103,7 +105,7 @@ export const adminRoutes: RouteConfig[] = [
   },
   {
     path: "/dashboard/admin/homepage",
-    component: AdminHomepage,
+    component: CollectionsDashboard,
     layout: "dashboard",
   },
 ];

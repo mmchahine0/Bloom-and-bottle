@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 import { useState, useEffect } from "react";
@@ -83,7 +81,7 @@ export function ProductEditDialog({
       price: 0,
       category: "un",
       brand: "",
-      stock: 0,
+      stock: false,
       featured: false,
       limitedEdition: false,
       comingSoon: false,
@@ -102,7 +100,7 @@ export function ProductEditDialog({
           price: product.price || 0,
           category: product.category || "un",
           brand: product.brand || "",
-          stock: product.stock || 0,
+          stock: product.stock || false,
           featured: product.featured || false,
           limitedEdition: product.limitedEdition || false,
           comingSoon: product.comingSoon || false,
@@ -131,7 +129,7 @@ export function ProductEditDialog({
           price: 0,
           category: "un",
           brand: "",
-          stock: 0,
+          stock: false,
           featured: false,
           limitedEdition: false,
           comingSoon: false,
@@ -161,7 +159,7 @@ const onSubmit = (data: {
   price: number;
   category: "un" | "men" | "women";
   brand: string;
-  stock: number;
+  stock: boolean;
   featured: boolean;
   limitedEdition: boolean;
   comingSoon: boolean;
@@ -530,20 +528,17 @@ const onSubmit = (data: {
                   control={form.control}
                   name="stock"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock*</FormLabel>
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number.parseInt(e.target.value) || 0)
-                          }
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <FormMessage />
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>In Stock</FormLabel>
+                        <FormDescription>Mark if product is available for purchase</FormDescription>
+                      </div>
                     </FormItem>
                   )}
                 />

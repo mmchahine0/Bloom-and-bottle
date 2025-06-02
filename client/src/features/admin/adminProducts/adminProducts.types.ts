@@ -51,7 +51,7 @@ export interface CreateProductInput {
     middle: string[];
     base: string[];
   };
-  stock?: number;
+  stock?: boolean;
   featured?: boolean;
   limitedEdition?: boolean;
   comingSoon?: boolean;
@@ -69,6 +69,7 @@ export interface Product extends CreateProductInput {
 }
 
 export interface ProductWithCreator extends Omit<Product, "createdBy"> {
+  _id: string;
   createdBy: User;
 }
 

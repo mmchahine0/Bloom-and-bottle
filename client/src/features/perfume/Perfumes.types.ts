@@ -6,7 +6,7 @@ export interface Perfume {
     discount: number
     description?: string
     imageUrl: string
-    stock: number
+    stock: boolean
     featured: boolean
     limitedEdition: boolean
     comingSoon: boolean

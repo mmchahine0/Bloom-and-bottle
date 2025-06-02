@@ -386,7 +386,7 @@ const AllSamplesPage: React.FC = () => {
               {data?.data.map((sample) => (
                 <Link
                   key={sample._id}
-                  to={`/sample/${sample._id}`}
+                  to={`/product/${sample._id}`}
                   className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
                 >
                   <div className="relative overflow-hidden">
@@ -438,7 +438,7 @@ const AllSamplesPage: React.FC = () => {
                       </div>
 
                       <div className="text-right">
-                        {sample.stock > 0 ? (
+                        {sample.stock ? (
                           <span className="text-xs text-green-600 font-medium">In Stock</span>
                         ) : (
                           <span className="text-xs text-red-600 font-medium">Out of Stock</span>

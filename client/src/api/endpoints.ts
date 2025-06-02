@@ -14,6 +14,8 @@ export const ENDPOINTS = {
     GetAll: "/user/products", // supports filters
     GetAllAdmin: "/admin/products",
     GetByIdAdmin: (id: string) => `/admin/product/${id}`,
+    GetAllUser: "/user/products",
+    GetByIdUser: (id: string) => `/user/product/${id}`,
     Perfume: {
       Base: "/perfumes",
       GetAll: "/perfumes",
@@ -72,6 +74,24 @@ export const ENDPOINTS = {
     RevokeAdmin: (id: string) => `/admin/users/${id}/revoke-admin`,
     Suspend: (id: string) => `/admin/users/${id}/suspend`,
     Unsuspend: (id: string) => `/admin/users/${id}/unsuspend`,
+    Collections: {
+      GetAll: "/admin/collections",
+      GetById: (id: string) => `/admin/collections/${id}`,
+      Create: "/admin/collections",
+      Update: (id: string) => `/admin/collections/${id}`,
+      Delete: (id: string) => `/admin/collections/${id}`,
+    },
+    Feedbacks: {
+      GetAll: "/admin/feedbacks",
+      GetById: (id: string) => `/admin/feedbacks/${id}`,
+      Create: "/admin/feedbacks",
+      Update: (id: string) => `/admin/feedbacks/${id}`,
+      Delete: (id: string) => `/admin/feedbacks/${id}`,
+      Upload: "/admin/feedbacks",
+    },
+    Upload: {
+      Image: "/admin/upload-image",
+    },
   },
 
   Homepage: {
@@ -90,12 +110,6 @@ export const ENDPOINTS = {
       Update: (id: string) => `/testimonials/${id}`,
       Delete: (id: string) => `/testimonials/${id}`,
     },
-  },
-
-  Feedbacks: {
-    GetAll: "/admin/feedbacks",
-    Upload: "/admin/feedbacks",
-    Delete: (id: string) => `/admin/feedbacks/${id}`,
   },
 
   Upload: {
