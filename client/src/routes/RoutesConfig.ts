@@ -15,6 +15,7 @@ import AdminProducts from "@/features/admin/adminProducts/adminProducts.componen
 import CollectionsDashboard from "@/features/admin/adminCollection/adminCollection.component"
 import Aboutus from "@/features/about/About.component"
 import ProductDetail from "@/features/product/Product.component";
+import Orders from "@/features/orders/Orders.component";
 
 export interface RouteConfig {
   path: string;
@@ -49,6 +50,14 @@ export const publicRoutes: RouteConfig[] = [
   { path: "/samples/women", component: WomenSamplesPage, layout: "base" },
   { path: "/samples", component: Samples, layout: "base" },
   { path: "/product/:id", component: ProductDetail, layout: "base" },
+  { path: "/cart", component: Cart, layout: "base" },
+
+  // {
+  //   path: "/orders",
+  //   component: GuestOrders, 
+  //   layout: "base",
+  // },
+
 ];
 
 // Routes that require user authentication
@@ -73,14 +82,8 @@ export const protectedRoutes: RouteConfig[] = [
   },
   {
     path: "/dashboard/orders",
-    component: MenPerfumesPage,
-    layout: "base",
-    isProtected: true,
-  },
-  {
-    path: "/dashboard/order/:id",
-    component: MenPerfumesPage,
-    layout: "base",
+    component: Orders,
+    layout: "dashboard",
     isProtected: true,
   },
 ];

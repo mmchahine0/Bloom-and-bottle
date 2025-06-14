@@ -38,7 +38,7 @@ export function DetailDialog({
   onStatusChange,
 }: DetailDialogProps) {
   if (!order) return null;
-
+ console.log(order.items)
   // Get status badge class based on status
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -58,7 +58,7 @@ export function DetailDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">
-            Order Details | #{order.id.substring(0, 8)}...
+            Order Details | #{order._id.substring(0, 8)}...
           </DialogTitle>
         </DialogHeader>
 
@@ -76,7 +76,7 @@ export function DetailDialog({
               </p>
               <p>
                 <span className="font-medium">User ID: </span>
-                {order.user.id}
+                {order.user._id}
               </p>
             </div>
           </div>
@@ -136,15 +136,27 @@ export function DetailDialog({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {order.items.map((item, index) => (
-                  <TableRow key={`index-${index}`}>
+                {order.items.map((item) => (
+                  <TableRow key={item._id}>
                     <TableCell className="font-medium">
-                      {item.product.name}
+                      <div className="flex items-center gap-2">
+                        {item.product.imageUrl && (
+                          <img
+                            src={item.product.imageUrl}
+                            alt={item.product.name}
+                            className="w-8 h-8 object-cover rounded"
+                          />
+                        )}
+                        <div>
+                          <div className="font-medium">{item.product.name}</div>
+                          <div className="text-sm text-gray-500">{item.product.brand}</div>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>{item.size}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{item.product.price}</TableCell>
-                    <TableCell>{item.product.price * item.quantity}</TableCell>
+                    <TableCell>${item.product.price.toFixed(2)}</TableCell>
+                    <TableCell>${(item.product.price * item.quantity).toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow>
@@ -152,7 +164,7 @@ export function DetailDialog({
                     Total:
                   </TableCell>
                   <TableCell className="font-medium">
-                    {order.totalPrice}
+                    ${order.totalPrice.toFixed(2)}
                   </TableCell>
                 </TableRow>
               </TableBody>

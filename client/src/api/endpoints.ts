@@ -40,10 +40,18 @@ export const ENDPOINTS = {
 
   Cart: {
     Base: "/cart",
+    GetAll: "/cart",
     AddItem: "/cart/add",
     UpdateItem: (itemId: string) => `/cart/update/${itemId}`,
+    IncrementItem: (itemId: string) => `/cart/increment/${itemId}`,
+    DecrementItem: (itemId: string) => `/cart/decrement/${itemId}`,
     RemoveItem: (itemId: string) => `/cart/remove/${itemId}`,
     Clear: "/cart/clear",
+    AddCollection: "/cart/collection/add",
+    RemoveCollection: (collectionId: string) => `/cart/collection/${collectionId}`,
+    UpdateCollection: (collectionId: string) => `/cart/collection/update/${collectionId}`,
+    IncrementCollection: (collectionId: string) => `/cart/collection/increment/${collectionId}`,
+    DecrementCollection: (collectionId: string) => `/cart/collection/decrement/${collectionId}`,
   },
 
   Orders: {
@@ -54,6 +62,7 @@ export const ENDPOINTS = {
     UpdateStatus: (orderId: string) => `/admin/orders/${orderId}/status`,
     OrderDetails: (orderId: string) => `/admin/orders/${orderId}/status`,
     DeleteOrder: (orderId: string) => `/admin/orders/${orderId}`,
+    GetOrder: (orderId: string) => `/orders/${orderId}`,
   },
 
   Notifications: {

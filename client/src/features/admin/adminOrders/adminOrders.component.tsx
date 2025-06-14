@@ -179,7 +179,7 @@ const OrdersDashboard = () => {
 
   const handleStatusUpdate = (order: OrderWithExtras, newStatus: string) => {
     statusMutation.mutate({
-      orderId: order.id,
+      orderId: order._id,
       status: newStatus,
     });
   };
@@ -187,7 +187,7 @@ const OrdersDashboard = () => {
   const handleDeleteConfirm = (order: OrderWithExtras) => {
     setConfirmDialog({
       isOpen: true,
-      orderId: order.id,
+      orderId: order._id,
       action: "delete",
     });
   };
@@ -247,7 +247,7 @@ const OrdersDashboard = () => {
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-medium">
-              Order #{order.id.substring(0, 8)}...
+              Order #{order._id.substring(0, 8)}...
             </h3>
             <p className="text-sm text-gray-500">
               by {order.user.name || order.user.email}
@@ -473,11 +473,11 @@ const OrdersDashboard = () => {
                 ) : (
                   data?.data.map((order: OrderWithExtras) => (
                     <TableRow
-                      key={order.id}
-                      aria-label={`Order ID: ${order.id}`}
+                      key={order._id}
+                      aria-label={`Order ID: ${order._id}`}
                     >
                       <TableCell className="font-medium">
-                        #{order.id.substring(0, 8)}...
+                        #{order._id.substring(0, 8)}...
                       </TableCell>
                       <TableCell>
                         {order.user.name || order.user.email}
@@ -553,7 +553,7 @@ const OrdersDashboard = () => {
           ) : (
             <ul className="space-y-4" role="list">
               {data?.data.map((order: OrderWithExtras) => (
-                <li key={order.id} role="listitem">
+                <li key={order._id} role="listitem">
                   <OrderCard order={order} />
                 </li>
               ))}

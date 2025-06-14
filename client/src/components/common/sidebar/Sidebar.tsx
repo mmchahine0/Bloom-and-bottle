@@ -33,6 +33,12 @@ const userItems = [
     icon: Calendar,
     description: "Manage your profile settings",
   },
+  {
+    title: "My orders",
+    url: "/dashboard/orders",
+    icon: StickyNote,
+    description: "Manage your profile settings",
+  },
 ];
 
 const adminItems = [

@@ -6,6 +6,7 @@ import menPerfume from "@/assets/ManPerfume.png.jpg";
 import femalePerfume from "@/assets/FemalePerfume.png.jpg";
 import { HomepageData, ApiResponse } from "./Home.types";
 import { getHomepageData } from "./Home.services";
+import { useCart } from "@/features/cart/useCart";
 
 // Skeleton data for error/loading states
 const skeletonData: HomepageData = {
@@ -145,6 +146,7 @@ const skeletonData: HomepageData = {
 
 export default function HomePageContent() {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const { data, isLoading, error } = useQuery<ApiResponse<HomepageData>>({
     queryKey: ["homepage"],
     queryFn: getHomepageData,
@@ -512,6 +514,44 @@ export default function HomePageContent() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => {
+                        const collectionData = {
+                          productId: collection._id,
+                          name: collection.title,
+                          brand: "Collection",
+                          imageUrl: collection.products[0]?.image || "",
+                          size: "collection",
+                          quantity: 1,
+                          price: 0,
+                          originalPrice: 0,
+                          type: "collection" as const,
+                          collectionId: collection._id,
+                          collectionProducts: collection.products.map(p => ({
+                            productId: p._id,
+                            name: p.name,
+                            brand: "Collection",
+                            imageUrl: p.image,
+                            size: "collection",
+                            quantity: 1,
+                            price: 0,
+                            originalPrice: 0,
+                            type: "perfume" as const
+                          }))
+                        };
+                        addToCart(collectionData);
+                      }}
+                      className={`px-6 py-2 rounded-lg transition ${
+                        error
+                          ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                          : "bg-black text-white hover:bg-gray-800"
+                      }`}
+                      disabled={!!error}
+                    >
+                      Add Collection to Cart
+                    </button>
                   </div>
                 </div>
               ))}

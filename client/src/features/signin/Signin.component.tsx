@@ -307,7 +307,7 @@ const Signin = () => {
     const navigation =
       responseData.role === "ADMIN"
         ? "/dashboard/admin/users"
-        : "/dashboard/todo";
+        : "/dashboard/profile";
 
     toast({
       title: "Welcome back!",

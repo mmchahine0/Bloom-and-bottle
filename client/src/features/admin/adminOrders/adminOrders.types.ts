@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export interface PaginationMetadata {
   nextPage: number | null;
   totalItems: number;
@@ -14,32 +16,37 @@ export interface PaginationParams {
 }
 
 export interface User {
+  [x: string]: ReactNode;
   id: string;
   email: string;
   name?: string;
 }
 
 export interface Product {
-  id: string;
+  _id: string;
   name: string;
+  brand: string;
   price: number;
-  image?: string;
+  imageUrl?: string;
+  type: 'perfume' | 'sample' | 'collection';
 }
 
 export interface OrderItem {
   product: string; // Product ID
   size: string;
   quantity: number;
+  _id: string;
 }
 
 export interface OrderItemExtended {
   product: Product;
   size: string;
   quantity: number;
+  _id: string;
 }
 
 export interface Order {
-  id: string;
+  _id: string;
   user: string; // User ID
   items: OrderItem[];
   totalPrice: number;
@@ -48,7 +55,7 @@ export interface Order {
 }
 
 export interface OrderWithExtras {
-  id: string;
+  _id: string;
   user: User;
   items: OrderItemExtended[];
   totalPrice: number;

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { getProductById } from './Product.services';
+import { useCart } from '../cart/useCart';
 
 interface ProductNotes {
   top: string[];
@@ -10,10 +12,12 @@ interface ProductNotes {
 }
 
 const ProductDetail: React.FC = () => {
+  const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
-
+  const { addToCart } = useCart(); //handles if logged or unlogged
+  
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', id],
     queryFn: () => getProductById(id!),
@@ -31,7 +35,7 @@ const ProductDetail: React.FC = () => {
 
   const handleQuantityChange = (change: number) => {
     const newQuantity = quantity + change;
-    if (newQuantity >= 1 && newQuantity <= 1) {
+    if (newQuantity >= 1 && newQuantity <= 10) {
       setQuantity(newQuantity);
     }
   };
@@ -45,6 +49,35 @@ const ProductDetail: React.FC = () => {
   const getDiscountedPrice = (originalPrice: number) => {
     if (!product || !product.discount) return originalPrice;
     return originalPrice - (originalPrice * (product.discount / 100));
+  };
+
+  const handleAddToCart = () => {
+    if (!product || !selectedSize) {
+      toast({
+        title: 'Error',
+        description: 'Please select a size',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const selectedSizeObj = product.sizes.find(size => size.label === selectedSize);
+    if (!selectedSizeObj) return;
+
+    const cartItem = {
+      productId: product._id,
+      name: product.name,
+      brand: product.brand,
+      imageUrl: product.imageUrl,
+      size: selectedSize,
+      quantity: quantity,
+      price: selectedSizeObj.price,
+      originalPrice: selectedSizeObj.price,
+      discount: product.discount,
+      type: product.type,
+    };
+
+    addToCart(cartItem);
   };
 
   if (isLoading) {
@@ -171,7 +204,7 @@ const ProductDetail: React.FC = () => {
               <button
                 onClick={() => handleQuantityChange(1)}
                 className="px-3 py-2 text-gray-600 hover:text-gray-800"
-                disabled={quantity >= 1}
+                disabled={quantity >= 10}
               >
                 +
               </button>
@@ -190,6 +223,7 @@ const ProductDetail: React.FC = () => {
           {/* Action Buttons */}
           <div className="space-y-3">
             <button 
+              onClick={handleAddToCart}
               className={`w-full py-3 px-6 rounded-full font-medium transition-colors ${
                 product.stock 
                   ? 'bg-white border-2 border-black text-black hover:bg-gray-50' 

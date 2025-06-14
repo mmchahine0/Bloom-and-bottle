@@ -1,239 +1,250 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Helmet } from "react-helmet-async";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/persist/persist";
-import { LoadingSpinner } from "@/components/common/loading spinner/LoadingSpinner.component";
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Helmet } from 'react-helmet-async';
+import { LoadingSpinner } from '@/components/common/loading spinner/LoadingSpinner.component';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
+import type { RootState } from '@/redux/persist/persist';
 
-interface Todo {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
+// Import cart components
+import LoggedUsersCart from './loggedUsers/loggedUsersCart.component';
+import UnloggedUsersCart from './unloggedUsers/unloggedUsersCart.components';
+
+// Import cart types for potential error handling
+import type { CartError } from './Cart.types';
+
+interface CartComponentProps {
+  // Optional props for customization
+  redirectToLogin?: boolean;
+  className?: string;
 }
 
-const Todo = () => {
-  const { username } = useSelector((state: RootState) => state.userdata);
-  const [isLoading, setIsLoading] = useState(false);
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTodo, setNewTodo] = useState({ title: "", description: "" });
-  const [activeFilter, setActiveFilter] = useState<
-    "all" | "active" | "completed"
-  >("all");
+const Cart: React.FC<CartComponentProps> = ({
+  className = '',
+}) => {
+  // Redux state for authentication
+  const accessToken = useSelector((state: RootState) => state.auth?.accessToken);
+  const isInitialized = useSelector((state: RootState) => state.auth?._initialized);
+  const userId = useSelector((state: RootState) => state.auth?.id);
 
-  // Simulate loading data on mount
+  // Local state for cart routing
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<CartError | null>(null);
+  const [userType, setUserType] = useState<'logged' | 'unlogged' | 'loading'>('loading');
+
+  // Determine user authentication status
   useEffect(() => {
-    setIsLoading(true);
-    // Mock loading todos from an API
-    setTimeout(() => {
-      const savedTodos = localStorage.getItem(`todos-${username}`);
-      if (savedTodos) {
-        setTodos(JSON.parse(savedTodos));
+    const determineUserType = () => {
+      try {
+        // Wait for Redux to be initialized
+        if (!isInitialized) {
+          setUserType('loading');
+          return;
+        }
+
+        // Check if user is authenticated
+        const isAuthenticated = !!(accessToken && userId);
+        
+        if (isAuthenticated) {
+          setUserType('logged');
+        } else {
+          setUserType('unlogged');
+        }
+
+        setError(null);
+      } catch (err) {
+        console.error('Error determining user type:', err);
+        setError({
+          code: 'AUTH_ERROR',
+          message: 'Failed to determine authentication status',
+          timestamp: new Date(),
+          operation: 'auth_check',
+          recoverable: true,
+        });
+        // Default to unlogged on error
+        setUserType('unlogged');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }, 300);
-  }, [username]);
-
-  // Save todos to localStorage when updated
-  useEffect(() => {
-    if (todos.length > 0 || localStorage.getItem(`todos-${username}`)) {
-      localStorage.setItem(`todos-${username}`, JSON.stringify(todos));
-    }
-  }, [todos, username]);
-
-  const handleAddTodo = () => {
-    if (!newTodo.title.trim()) return;
-
-    const todo: Todo = {
-      id: Date.now().toString(),
-      title: newTodo.title.trim(),
-      description: newTodo.description.trim(),
-      completed: false,
     };
 
-    setTodos([...todos, todo]);
-    setNewTodo({ title: "", description: "" });
+    determineUserType();
+  }, [accessToken, userId, isInitialized]);
+
+  // Handle retry for authentication errors
+  const handleRetry = () => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Force re-check after a brief delay
+    setTimeout(() => {
+      const isAuthenticated = !!(accessToken && userId);
+      setUserType(isAuthenticated ? 'logged' : 'unlogged');
+      setIsLoading(false);
+    }, 500);
   };
 
-  const handleToggleTodo = (id: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
+  // Handle navigation to login
+  const handleNavigateToHome = () => {
+    window.location.href = '/home';
+  };
+
+  // Loading state while determining user type
+  if (isLoading || userType === 'loading') {
+    return (
+      <>
+        <Helmet>
+          <title>Loading Cart... | Your Store</title>
+          <meta name="description" content="Loading your shopping cart" />
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        
+        <div className={`container mx-auto px-4 py-8 ${className}`}>
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center space-y-4">
+              <LoadingSpinner size="lg" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-gray-700">
+                  Loading Cart
+                </h2>
+                <p className="text-gray-500">
+                  Preparing your shopping experience...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
     );
-  };
-
-  const handleDeleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
-
-  const handleEditTodo = (id: string) => {
-    // In a real app, this would open an edit modal
-    const todoToEdit = todos.find((todo) => todo.id === id);
-    if (!todoToEdit) return;
-
-    const newTitle = prompt("Edit title:", todoToEdit.title);
-    const newDescription = prompt("Edit description:", todoToEdit.description);
-
-    if (newTitle === null || newDescription === null) return;
-
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id
-          ? {
-              ...todo,
-              title: newTitle.trim() || todo.title,
-              description: newDescription.trim(),
-            }
-          : todo
-      )
-    );
-  };
-
-  // Filter todos based on active filter
-  const filteredTodos = todos.filter((todo) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "active") return !todo.completed;
-    return todo.completed; // "completed" filter
-  });
-
-  if (isLoading) {
-    return <LoadingSpinner size="lg" label="Loading your todos..." />;
   }
+
+  // Error state
+  if (error) {
+    return (
+      <>
+        <Helmet>
+          <title>Cart Error | Your Store</title>
+          <meta name="description" content="Cart loading error" />
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        
+        <div className={`container mx-auto px-4 py-8 ${className}`}>
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="text-center py-12">
+              <AlertTriangle size={64} className="mx-auto text-red-300 mb-4" />
+              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                Cart Error
+              </h2>
+              <p className="text-gray-500 mb-6">
+                {error.message}
+              </p>
+              
+              <div className="space-y-2">
+                <Button onClick={handleRetry} className="mr-2">
+                  Try Again
+                </Button>
+                
+                {error.recoverable && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.location.reload()}
+                  >
+                    Refresh Page
+                  </Button>
+                )}
+              </div>
+              
+              {error.code === 'AUTH_ERROR' && (
+                <div className="mt-4">
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <AlertDescription className="text-blue-800">
+                      If you're having trouble accessing your account, try logging out and back in.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
+  // Render appropriate cart component based on user type
+  const renderCartComponent = () => {
+    switch (userType) {
+      case 'logged':
+        return <LoggedUsersCart />;
+      
+      case 'unlogged':
+        return (
+          <>
+            
+            <UnloggedUsersCart />
+          </>
+        );
+      
+      default:
+        // Fallback to unlogged cart
+        return <UnloggedUsersCart />;
+    }
+  };
 
   return (
     <>
       <Helmet>
-        <title>Todo Dashboard | Task Management</title>
-        <meta
-          name="description"
-          content="Manage your tasks and stay organized with our simple todo dashboard."
+        <title>
+          {userType === 'logged' ? 'My Cart' : 'Shopping Cart'} | Your Store
+        </title>
+        <meta 
+          name="description" 
+          content={
+            userType === 'logged' 
+              ? 'Your personal shopping cart with saved items and order history'
+              : 'Your shopping cart - sign in to save items and track orders'
+          } 
         />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href={window.location.href} />
       </Helmet>
 
-      <div>
-        <h1 className="text-2xl font-bold mb-6">Todo Dashboard</h1>
+      <div className={`bg-gray-50 ${className}`}>
+        {/* Main Cart Content */}
+        <main className="container mx-auto p-20">
+          {renderCartComponent()}
+        </main>
 
-        {/* Todo Input Form */}
-        <Card className="p-4 mb-6 bg-white shadow-sm">
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                type="text"
-                placeholder="Todo title"
-                value={newTodo.title}
-                onChange={(e) =>
-                  setNewTodo({ ...newTodo, title: e.target.value })
-                }
-                className="w-full"
-              />
-              <Input
-                type="text"
-                placeholder="Todo description"
-                value={newTodo.description}
-                onChange={(e) =>
-                  setNewTodo({ ...newTodo, description: e.target.value })
-                }
-                className="w-full"
-              />
-            </div>
-            <Button
-              onClick={handleAddTodo}
-              className="bg-[#16C47F] hover:bg-[#16C47F]/90 text-white w-full md:w-auto md:self-end"
-            >
-              Add Todo
-            </Button>
-          </div>
-        </Card>
-
-        {/* Filter Buttons */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button
-            onClick={() => setActiveFilter("all")}
-            variant={activeFilter === "all" ? "default" : "outline"}
-            className={activeFilter === "all" ? "bg-[#16C47F]" : ""}
-          >
-            All
-          </Button>
-          <Button
-            onClick={() => setActiveFilter("active")}
-            variant={activeFilter === "active" ? "default" : "outline"}
-            className={activeFilter === "active" ? "bg-[#16C47F]" : ""}
-          >
-            Active
-          </Button>
-          <Button
-            onClick={() => setActiveFilter("completed")}
-            variant={activeFilter === "completed" ? "default" : "outline"}
-            className={activeFilter === "completed" ? "bg-[#16C47F]" : ""}
-          >
-            Completed
-          </Button>
-        </div>
-
-        {/* Todo List */}
-        {filteredTodos.length > 0 ? (
-          <div className="space-y-3">
-            {filteredTodos.map((todo) => (
-              <Card key={todo.id} className="bg-white p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={todo.completed}
-                      onChange={() => handleToggleTodo(todo.id)}
-                      className="h-5 w-5"
-                    />
-                    <div
-                      className={
-                        todo.completed ? "line-through text-gray-500" : ""
-                      }
-                    >
-                      <h3 className="font-medium">{todo.title}</h3>
-                      {todo.description && (
-                        <p className="text-sm text-gray-600">
-                          {todo.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEditTodo(todo.id)}
-                      size="sm"
-                      className="bg-[#16C47F] hover:bg-[#16C47F]/90 text-white"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteTodo(todo.id)}
-                      size="sm"
-                      variant="destructive"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            No todos found. Add some tasks to get started!
-          </div>
-        )}
-
-        {/* Todo Counter */}
-        {todos.length > 0 && (
-          <div className="mt-4 text-gray-600 text-sm">
-            Showing {filteredTodos.length} of {todos.length} todos
-          </div>
-        )}
+        
       </div>
+      {/* Cart Footer*/}
+        <div className="bg-white border-t">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+              <div className="flex items-center gap-4">
+                <span>🚚 Free delivery all over Lebanon</span>
+                <span>💯 100% Authentic products</span>
+                <span>🔒 Secure checkout</span>
+              </div>
+              
+              {userType === 'unlogged' && (
+                <div className="text-center">
+                  <Button 
+                    variant="link" 
+                    size="sm"
+                    onClick={handleNavigateToHome}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Sign in for a better experience →
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
     </>
   );
 };
 
-export default Todo;
+export default Cart;
