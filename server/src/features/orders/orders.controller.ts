@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Order } from "../../database/model/orderModel";
+import { Types } from "mongoose";
 
 // GET /orders - Get all orders for a user
 export const getUserOrders = async (
@@ -7,8 +8,13 @@ export const getUserOrders = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user?.id;
-    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+    const userId = (req.user?.userId as string);
+    const orders = await Order.find({ user: userId })
+      .populate({
+        path: 'items.product',
+        select: 'name brand price imageUrl type'
+      })
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch user orders" });
@@ -22,7 +28,11 @@ export const getOrderById = async (
 ): Promise<void> => {
   try {
     const { orderId } = req.params;
-    const order = await Order.findById(orderId).populate("items.product");
+    const order = await Order.findById(orderId)
+      .populate({
+        path: 'items.product',
+        select: 'name brand price imageUrl type'
+      });
     if (!order) res.status(404).json({ error: "Order not found" });
 
     res.json(order);
@@ -37,19 +47,90 @@ export const placeOrder = async (
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = (req.user?.userId as string);
     const { items, totalPrice } = req.body;
 
+    // Validate required fields
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: "User not authenticated"
+      });
+      return;
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      res.status(400).json({
+        success: false,
+        error: "Order must contain at least one item"
+      });
+      return;
+    }
+
+    if (!totalPrice || typeof totalPrice !== 'number' || totalPrice <= 0) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid total price"
+      });
+      return;
+    }
+
+    // Validate items structure
+    const validItems = items.every(item => 
+      item.productId && 
+      item.size && 
+      item.quantity && 
+      item.price &&
+      typeof item.quantity === 'number' &&
+      typeof item.price === 'number' &&
+      item.quantity > 0 &&
+      item.price > 0
+    );
+
+    if (!validItems) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid item structure in order"
+      });
+      return;
+    }
+
+    // Create order with proper structure
     const newOrder = new Order({
-      user: userId,
-      items,
+      user: new Types.ObjectId(userId),
+      items: items.map(item => ({
+        product: new Types.ObjectId(item.productId),
+        size: item.size,
+        quantity: item.quantity,
+        price: item.price
+      })),
       totalPrice,
+      status: 'pending', // Initial status
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
     await newOrder.save();
-    res.status(201).json(newOrder);
+
+    // Return success response with order details
+    res.status(201).json({
+      success: true,
+      message: "Order placed successfully",
+      data: {
+        orderId: newOrder._id,
+        items: newOrder.items,
+        totalPrice: newOrder.totalPrice,
+        status: newOrder.status,
+        createdAt: newOrder.createdAt
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: "Failed to place order" });
+    console.error("Error placing order:", err);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to place order",
+      message: "An error occurred while processing your order"
+    });
   }
 };
 
@@ -88,6 +169,10 @@ export const getAllOrders = async (
     const totalItems = await Order.countDocuments(query);
     const orders = await Order.find(query)
       .populate("user")
+      .populate({
+        path: 'items.product',
+        select: 'name brand price imageUrl type'
+      })
       .sort({ createdAt: sortDirection === "asc" ? 1 : -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -136,7 +221,10 @@ export const getAdminOrderDetails = async (
     const { orderId } = req.params;
     const order = await Order.findById(orderId)
       .populate("user")
-      .populate("items.product");
+      .populate({
+        path: 'items.product',
+        select: 'name brand price imageUrl type'
+      });
 
     if (!order) res.status(404).json({ error: "Order not found" });
     res.json(order);
