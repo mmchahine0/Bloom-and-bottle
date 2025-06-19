@@ -1,62 +1,56 @@
 import { Document, Types } from 'mongoose';
 
-// Base Product interface
+// Base interfaces
 export interface IProduct {
   _id: Types.ObjectId;
   name: string;
   brand: string;
   imageUrl: string;
   price: number;
-  originalPrice?: number;
-  discount?: number;
-  type?: string;
+  discount: number;
+  type: 'perfume' | 'sample';
   sizes?: Array<{ 
     label: string; 
     price: number; 
-    originalPrice?: number 
   }>;
 }
 
-// Base User interface
-export interface IUser {
-  _id: Types.ObjectId;
-  name?: string;
-  email?: string;
-}
-
-// Base Collection interface
 export interface ICollection {
   _id: Types.ObjectId;
   name: string;
   description?: string;
-  perfumes: Types.ObjectId[];
   image?: string;
+  price: number;
   featured: boolean;
+  perfumes: Types.ObjectId[];
   createdAt: Date;
 }
 
-// Collection with populated products
 export interface ICollectionWithProducts extends Omit<ICollection, 'perfumes'> {
   perfumes: IProduct[];
 }
 
-// Cart Item interface
+// Cart item interfaces
 export interface ICartItem {
   _id: Types.ObjectId;
-  product: Types.ObjectId | IProduct;
+  product: Types.ObjectId;
   size: string;
   quantity: number;
+  price: number;
+  originalPrice: number;
+  discount: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Cart Item with populated product
 export interface ICartItemWithProduct extends Omit<ICartItem, 'product'> {
   product: IProduct;
+  price: number;
+  originalPrice: number;
+  discount: number;
 }
 
-// NEW: Collection Cart Item interface
-export interface ICollectionCartItem extends Document {
+export interface ICollectionCartItem {
   _id: Types.ObjectId;
   collectionId: Types.ObjectId;
   products: Array<{
@@ -64,19 +58,14 @@ export interface ICollectionCartItem extends Document {
     size: string;
     quantity: number;
   }>;
+  price: number;
   quantity: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// NEW: Collection Cart Item with populated data
-export interface ICollectionCartItemWithProduct extends Omit<ICollectionCartItem, 'collectionId' | 'products'> {
+export interface ICollectionCartItemWithPopulated extends Omit<ICollectionCartItem, 'collectionId'> {
   collectionId: ICollection;
-  products: Array<{
-    product: IProduct;
-    size: string;
-    quantity: number;
-  }>;
 }
 
 // Cart interface
@@ -84,14 +73,14 @@ export interface ICart extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
   items: Types.DocumentArray<ICartItem>;
-  collectionItems: Types.DocumentArray<ICollectionCartItem>; // NEW
+  collectionItems: Types.DocumentArray<ICollectionCartItem>;
   totalItems: number;
   totalPrice: number;
   discount: number;
   lastUpdated: Date;
 }
 
-// Cart item response sent to client
+// Response interfaces for frontend
 export interface CartItemResponse {
   id: string;
   productId: string;
@@ -106,88 +95,59 @@ export interface CartItemResponse {
   type: string;
 }
 
-// NEW: Collection cart item response
 export interface CollectionCartItemResponse {
   id: string;
   collectionId: string;
   collectionName: string;
   collectionDescription?: string;
   collectionImage?: string;
-  products: Array<{
-    productId: string;
-    name: string;
-    brand: string;
-    imageUrl: string;
-    size: string;
-    quantity: number;
-    price: number;
-    originalPrice: number;
-    discount: number;
-    type: string;
-  }>;
   quantity: number;
-  totalPrice: number;
-  originalTotalPrice: number;
-  discount: number;
+  price: number; // Fixed collection price
 }
 
-// Cart response structure
+export interface CartSummary {
+  totalItems: number;
+  totalPrice: number;
+  totalDiscount: number;
+  subtotalProducts: number;
+  subtotalCollections: number;
+}
+
 export interface CartResponse {
   success: boolean;
   data: {
     items: CartItemResponse[];
-    collectionItems: CollectionCartItemResponse[]; // NEW
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
+    collectionItems: CollectionCartItemResponse[];
+    summary: CartSummary;
   };
   message?: string;
 }
 
-// Admin cart aggregation result
-export interface AdminCartResult {
-  _id: Types.ObjectId;
-  user: IUser;
-  items: Array<{
-    _id: Types.ObjectId;
-    product: IProduct;
-    size: string;
-    quantity: number;
-    createdAt: Date;
-  }>;
-  collectionItems: Array<ICollectionCartItemWithProduct>; // NEW
-  totalItems: number;
-  totalPrice?: number;
-  discount?: number;
-  lastUpdated: Date;
+// Request interfaces
+export interface AddToCartRequest {
+  productId: string;
+  size: string;
+  quantity?: number;
 }
 
-// NEW: Add to collection cart request
-export interface AddToCollectionCartRequest {
+export interface AddCollectionToCartRequest {
   collectionId: string;
-  products: Array<{
-    productId: string;
-    size: string;
-    quantity: number;
-  }>;
+  quantity?: number;
+}
+
+export interface UpdateQuantityRequest {
   quantity: number;
 }
 
-// NEW: Add to collection cart data (for frontend)
-export interface AddToCollectionCartData extends AddToCollectionCartRequest {
-  collectionName: string;
-  collectionDescription?: string;
-  collectionImage?: string;
-  productDetails: Array<{
-    productId: string;
-    name: string;
-    brand: string;
-    imageUrl: string;
-    size: string;
-    quantity: number;
-    price: number;
-    originalPrice: number;
-    discount: number;
-    type: string;
-  }>;
+// Order compatibility interfaces
+export interface OrderItem {
+  productId: string;
+  size: string;
+  quantity: number;
+  price: number;
+}
+
+export interface CreateOrderData {
+  items: OrderItem[];
+  totalPrice: number;
 }

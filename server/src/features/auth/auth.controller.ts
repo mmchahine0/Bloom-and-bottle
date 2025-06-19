@@ -258,7 +258,24 @@ export const resetPassword = async (
       return;
     }
 
-    // The OTP service already handles updating the password if the code is valid
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(404).json({
+        statusCode: 404,
+        message: "User not found",
+      });
+      return;
+    }
+
+    // Hash the new password (using same salt rounds as in signUp)
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    await User.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+    });
+
     res.json({
       statusCode: 200,
       message: "Password reset successful",

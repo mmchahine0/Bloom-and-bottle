@@ -24,8 +24,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 
 // Apply authentication middleware to all admin routes
-router.use(protect);
-router.use(isAdmin);
+router.use("/admin", protect, isAdmin); 
 
 // COLLECTION ROUTES
 router.get("/admin/collections", getAllCollections);

@@ -38,12 +38,13 @@ export const protect = (
   }
 };
 
-const getUserSuspenssion = (req: Request): string => {
-  const user = req.user?.suspension as JwtPayload;
+// Fixed function - using 'suspended' instead of 'suspension'
+const getUserSuspension = (req: Request): boolean => {
+  const user = req.user;
   if (!user) {
-    throw new Error("User suspension status not found in token");
+    throw new Error("User not found in token");
   }
-  return user?.suspension;
+  return user.suspended as boolean;
 };
 
 export const checkSuspension = async (
@@ -52,8 +53,7 @@ export const checkSuspension = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-
-    const suspended = getUserSuspenssion(req)
+    const suspended = getUserSuspension(req);
     if (suspended) {
       next(errorHandler(403, "Account suspended. Please contact support."));
       return;

@@ -4,11 +4,11 @@ const cartItemSchema = new Schema({
   product: { type: Schema.Types.ObjectId, ref: "Perfume", required: true },
   size: { type: String, required: true },
   quantity: { type: Number, default: 1, min: 1, max: 10 },
+  price: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 
-// NEW: Collection cart item schema
 const collectionCartItemSchema = new Schema({
   collectionId: { type: Schema.Types.ObjectId, ref: "Collection", required: true },
   products: [{
@@ -16,6 +16,7 @@ const collectionCartItemSchema = new Schema({
     size: { type: String, required: true },
     quantity: { type: Number, default: 1, min: 1, max: 10 }
   }],
+  price: { type: Number, required: true, default: 0 },
   quantity: { type: Number, default: 1, min: 1, max: 10 }, 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

@@ -6,6 +6,7 @@ const collectionSchema = new Schema({
   perfumes: [{ type: Schema.Types.ObjectId, ref: "Perfume" }], // multiple perfumes
   image: { type: String }, // banner image
   featured: { type: Boolean, default: false },
+  price: { type: Number, required: true, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

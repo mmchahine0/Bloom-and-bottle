@@ -25,7 +25,8 @@ const buildCollectionFilters = (query: any): any => {
     const searchTerm = query.search.trim();
     filters.$or = [
       { name: { $regex: searchTerm, $options: "i" } },
-      { description: { $regex: searchTerm, $options: "i" } }
+      { description: { $regex: searchTerm, $options: "i" } },
+      { price: { $regex: searchTerm, $options: "i" } }
     ];
   }
   
@@ -143,6 +144,7 @@ export const createCollection = async (
       perfumes = [],
       perfumeIds = [], 
       featured = false,
+      price = 0,
     } = req.body;
 
     let parsedPerfumes: string[] = [];
@@ -168,6 +170,7 @@ export const createCollection = async (
       description,
       perfumes: parsedPerfumes, 
       featured: Boolean(featured),
+      price: Number(price),
     });
 
     const savedCollection = await newCollection.save();
@@ -237,6 +240,10 @@ export const updateCollection = async (
       delete updateData.perfumeIds;
     }
 
+    // Ensure price is a number
+    if (updateData.price !== undefined) {
+      updateData.price = Number(updateData.price);
+    }
 
     // Handle image upload if a new image is provided
     if (req.file) {

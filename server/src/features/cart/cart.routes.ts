@@ -1,37 +1,44 @@
 import { Router } from "express";
 import { protect } from "../../middleware/authMiddleware";
-import { isAdmin } from "../../middleware/adminMiddleware";
 import {
   getUserCart,
   addToCart,
   updateCartItem,
-  removeCartItem,
-  clearCart,
   incrementCartItem,
   decrementCartItem,
+  removeCartItem,
+  clearCart,
   addCollectionToCart,
   removeCollectionFromCart,
   updateCollectionQuantity,
   incrementCollectionQuantity,
   decrementCollectionQuantity,
+  getCartOrderData
 } from "./cart.controller";
 
 const router = Router();
 
-router.get("/cart", protect, getUserCart);
-router.post("/cart/add", protect, addToCart);
-router.put("/cart/item/:itemId", protect, updateCartItem);
-router.put("/cart/increment/:itemId", protect, incrementCartItem);
-router.put("/cart/decrement/:itemId", protect, decrementCartItem);
-router.delete("/cart/item/:itemId", protect, removeCartItem);
-router.delete("/cart/clear", protect, clearCart);
+// Apply authentication middleware to all cart routes
+router.use("/cart", protect);
 
-//Collection
+// Individual cart item routes - UPDATED to match your endpoints
+router.get("/cart", getUserCart);
+router.post("/cart/add", addToCart);
+router.put("/cart/update/:itemId", updateCartItem); 
+router.put("/cart/increment/:itemId", incrementCartItem);
+router.put("/cart/decrement/:itemId", decrementCartItem);
+router.delete("/cart/item/:itemId", removeCartItem);
+router.delete("/cart/clear", clearCart);
+
+// Collection cart routes - UPDATED to match your endpoints
 router.post("/cart/collection/add", addCollectionToCart);
-router.delete("/cart/collection/:itemId", removeCollectionFromCart);
-router.put("/cart/collection/update/:itemId", updateCollectionQuantity);
-router.put("/cart/collection/increment/:itemId", incrementCollectionQuantity);
+router.delete("/cart/collection/:itemId", removeCollectionFromCart); 
+router.put("/cart/collection/update/:itemId", updateCollectionQuantity); 
+router.put("/cart/collection/increment/:itemId", incrementCollectionQuantity); 
 router.put("/cart/collection/decrement/:itemId", decrementCollectionQuantity);
+
+router.get("/cart/order-data", getCartOrderData);
+
 
 
 export default router;

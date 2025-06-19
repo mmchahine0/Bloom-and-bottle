@@ -1,5 +1,6 @@
 import { Document } from "mongoose";
 import { Order } from "../database/model/orderModel";
+import { User } from "../database/model/userModel";
 
 interface OrderItem {
   product: {
@@ -27,14 +28,6 @@ interface CollectionItem {
   discount: number;
 }
 
-interface ShippingAddress {
-  name: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-}
-
 interface OrderDocument extends Document {
   items: OrderItem[];
   collectionItems: CollectionItem[];
@@ -42,13 +35,16 @@ interface OrderDocument extends Document {
   originalTotalPrice: number;
   discount: number;
   totalItems: number;
-  shippingAddress: ShippingAddress;
+  user: {
+    name: string;
+    email: string;
+  };
   _id: string;
   createdAt: Date;
 }
 
 export const formatOrderForWhatsApp = (order: OrderDocument): string => {
-  const { items, collectionItems, totalPrice, discount, shippingAddress } = order;
+  const { items, collectionItems, totalPrice, discount, user } = order;
 
   // Format individual items
   const itemsText = items.map(item => {
@@ -74,26 +70,23 @@ ${productsText}
 Collection Total: $${collection.totalPrice}${collectionDiscountText}`;
   }).join('\n');
 
-  // Format shipping address
-  const addressText = `
-Shipping Address:
-Name: ${shippingAddress.name}
-Phone: ${shippingAddress.phone}
-Address: ${shippingAddress.address}
-City: ${shippingAddress.city}
-Country: ${shippingAddress.country}`;
+  // Format user information
+  const userInfo = `
+Customer Information:
+Name: ${user.name}
+Email: ${user.email}`;
 
   // Combine all parts
   const message = `
 New Order Received! 🎉
+
+${userInfo}
 
 Order Items:
 ${itemsText}
 
 Collection Items:
 ${collectionsText}
-
-${addressText}
 
 Order Summary:
 Total Items: ${order.totalItems}

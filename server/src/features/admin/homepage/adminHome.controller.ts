@@ -43,6 +43,7 @@ export const getHomepageData = async (req: Request, res: Response): Promise<void
       _id: collection._id.toString(),
       title: collection.name,
       description: collection.description || '',
+      price: collection.price || 0,
       products: collection.perfumes.map((perfume: any) => ({
         _id: perfume._id.toString(),
         name: perfume.name,
