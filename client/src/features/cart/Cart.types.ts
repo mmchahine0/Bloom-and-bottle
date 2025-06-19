@@ -1,3 +1,5 @@
+// UPDATED Cart.types.ts - Cleaned up and compatible with new backend
+
 export interface CollectionProduct {
   productId: string;
   size: string;
@@ -38,25 +40,55 @@ export interface CartItem {
   collectionProducts?: CollectionProduct[];
 }
 
+// UPDATED: Simplified CollectionCartItem to match backend
+export interface CollectionCartItem {
+  id: string;
+  collectionId: string;
+  collectionName: string;
+  collectionDescription?: string;
+  collectionImage?: string;
+  quantity: number;
+  totalPrice: number; // Fixed price for collection (price * quantity)
+  originalTotalPrice: number; // Same as totalPrice (no discounts)
+  discount: number; // Always 0 for collections
+}
+
+// UPDATED: Cart interface to match backend response
 export interface Cart {
   items: CartItem[];
+  collectionItems: CollectionCartItem[];
   totalItems: number;
   totalPrice: number;
-  discount: number;
+  discount: number; // Only from individual products
 }
 
 export interface WhatsAppOrderData {
   orderId: string;
-  items: CartItem[];
-  totalPrice: number;
-  totalItems: number;
-  customerInfo?: {
-    name?: string;
-    phone?: string;
-    email?: string;
-    userId?: string;
-  };
   timestamp: Date;
+  customerInfo?: {
+    userId: string;
+    name: string;
+    email: string;
+  };
+  items: CartItem[];
+  collectionItems?: {
+    collectionName: string;
+    quantity: number;
+    products: {
+      name: string;
+      size: string;
+      quantity: number;
+      price: number;
+      originalPrice: number;
+      discount?: number;
+    }[];
+    totalPrice: number;
+    discount?: number;
+  }[];
+  totalItems: number;
+  totalPrice: number;
+  originalTotalPrice: number;
+  discount: number;
 }
 
 export interface OrderSummary {
@@ -289,7 +321,7 @@ export interface MigrationResult {
   errors: string[];
 }
 
-// Cart item response sent to client
+// UPDATED: Response interfaces to match backend
 export interface CartItemResponse {
   id: string;
   productId: string;
@@ -304,74 +336,51 @@ export interface CartItemResponse {
   type: string;
 }
 
-// NEW: Collection cart item response
 export interface CollectionCartItemResponse {
   id: string;
   collectionId: string;
   collectionName: string;
   collectionDescription?: string;
   collectionImage?: string;
-  products: Array<{
-    productId: string;
-    name: string;
-    brand: string;
-    imageUrl: string;
-    size: string;
-    quantity: number;
-    price: number;
-    originalPrice: number;
-    discount: number;
-    type: string;
-  }>;
   quantity: number;
-  totalPrice: number;
-  originalTotalPrice: number;
-  discount: number;
+  price: number; // Fixed collection price
 }
 
-// Cart response structure
 export interface CartResponse {
   success: boolean;
   data: {
     items: CartItemResponse[];
-    collectionItems: CollectionCartItemResponse[]; // NEW
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
+    collectionItems: CollectionCartItemResponse[];
+    summary: {
+      totalItems: number;
+      totalPrice: number;
+      totalDiscount: number;
+      subtotalProducts: number;
+      subtotalCollections: number;
+    };
   };
   message?: string;
 }
 
+// UPDATED: Simplified collection cart request to match backend
 export interface AddToCollectionCartRequest {
   collectionId: string;
-  products: Array<{
+  quantity: number;
+  items: {
     productId: string;
     size: string;
     quantity: number;
-  }>;
-  quantity: number;
+  }[];
 }
 
-// NEW: Add to collection cart data (for frontend)
 export interface AddToCollectionCartData extends AddToCollectionCartRequest {
   collectionName: string;
   collectionDescription?: string;
   collectionImage?: string;
-  productDetails: Array<{
-    productId: string;
-    name: string;
-    brand: string;
-    imageUrl: string;
-    size: string;
-    quantity: number;
-    price: number;
-    originalPrice: number;
-    discount: number;
-    type: string;
-  }>;
+  price: number; // Fixed collection price
 }
 
-// NEW: Guest cart interfaces
+// Guest cart interfaces - UPDATED
 export interface GuestCartItem {
   id: string;
   productId: string;
@@ -392,18 +401,6 @@ export interface GuestCollectionCartItem {
   collectionName: string;
   collectionDescription?: string;
   collectionImage?: string;
-  products: Array<{
-    productId: string;
-    name: string;
-    brand: string;
-    imageUrl: string;
-    size: string;
-    quantity: number;
-    price: number;
-    originalPrice: number;
-    discount: number;
-    type: string;
-  }>;
   quantity: number;
   totalPrice: number;
   originalTotalPrice: number;
@@ -415,7 +412,7 @@ export interface GuestCart {
   collectionItems: GuestCollectionCartItem[];
   totalItems: number;
   totalPrice: number;
-  discount: number;
+  discount: number; // Only from individual products
   sessionId: string;
   lastUpdated: Date;
 }

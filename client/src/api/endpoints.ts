@@ -6,8 +6,8 @@ export const ENDPOINTS = {
     ResendCode: "/auth/resend-code",
     ForgotPassword: "/auth/forgot-password",
     ResetPassword: "/auth/reset-password",
-    RefreshToken: "/auth/refresh-token",
-    Me: "/auth/me", // Get current user
+    RefreshToken: "/auth/refresh",
+    Me: "/auth/me", 
   },
 
   Products: {
@@ -45,13 +45,14 @@ export const ENDPOINTS = {
     UpdateItem: (itemId: string) => `/cart/update/${itemId}`,
     IncrementItem: (itemId: string) => `/cart/increment/${itemId}`,
     DecrementItem: (itemId: string) => `/cart/decrement/${itemId}`,
-    RemoveItem: (itemId: string) => `/cart/remove/${itemId}`,
+    RemoveItem: (itemId: string) => `/cart/item/${itemId}`,
     Clear: "/cart/clear",
     AddCollection: "/cart/collection/add",
     RemoveCollection: (collectionId: string) => `/cart/collection/${collectionId}`,
     UpdateCollection: (collectionId: string) => `/cart/collection/update/${collectionId}`,
     IncrementCollection: (collectionId: string) => `/cart/collection/increment/${collectionId}`,
     DecrementCollection: (collectionId: string) => `/cart/collection/decrement/${collectionId}`,
+    GetCartData: "/cart/order-data",
   },
 
   Orders: {

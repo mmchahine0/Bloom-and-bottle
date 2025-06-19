@@ -5,11 +5,10 @@ import type {
     WhatsAppOrderData, 
     AddToCartData,
     CollectionItem,
-    CollectionProduct,
     GuestCart,
+    CollectionCartItem,
 } from './Cart.types';
-import { addToCartAPI } from './loggedUsers/loggedUsersCart.services';
-import { addCollectionToCartAPI } from '../home/Home.services';
+import { addToCartAPI, addCollectionToCartAPI } from './loggedUsers/loggedUsersCart.services';
 
 // ==================== CONSTANTS ====================
 
@@ -24,6 +23,7 @@ export const CART_CONFIG = {
   },
 } as const;
 
+// UPDATED: WhatsApp message formatter for new cart structure
 export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
   const isLoggedUser = !!orderData.customerInfo?.userId;
   
@@ -39,20 +39,23 @@ export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
   }
   
   message += `📅 *Date:* ${orderData.timestamp.toLocaleString()}\n\n`;
-  message += `🎁 *Items Ordered:*\n`;
   
-  orderData.items.forEach((item, index) => {
-    const itemPrice = calculateItemPrice(item);
-    message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
-    message += `   Size: ${item.size}\n`;
-    message += `   Quantity: ${item.quantity}\n`;
-    message += `   Price: $${itemPrice.toFixed(2)} USD\n`;
-    
-    if (item.discount && item.discount > 0) {
-      message += `   💰 Discount: ${item.discount}% OFF\n`;
-    }
-    message += `\n`;
-  });
+  // Add individual items
+  if (orderData.items && orderData.items.length > 0) {
+    message += `🎁 *Individual Items:*\n`;
+    orderData.items.forEach((item, index) => {
+      const itemPrice = calculateItemPrice(item);
+      message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
+      message += `   Size: ${item.size}\n`;
+      message += `   Quantity: ${item.quantity}\n`;
+      message += `   Price: $${itemPrice.toFixed(2)} USD\n`;
+      
+      if (item.discount && item.discount > 0) {
+        message += `   💰 Discount: ${item.discount}% OFF\n`;
+      }
+      message += `\n`;
+    });
+  }
 
   message += `📊 *Order Summary:*\n`;
   message += `Total Items: ${orderData.totalItems}\n`;
@@ -74,39 +77,13 @@ export const generateWhatsAppURL = (orderData: WhatsAppOrderData): string => {
   return `https://wa.me/${CART_CONFIG.WHATSAPP_NUMBER.replace(/\s+/g, '')}?text=${encodedMessage}`;
 };
 
+// UPDATED: Calculate item price with proper discount handling
 export const calculateItemPrice = (item: CartItem): number => {
   // Validate discount values
   const validateDiscount = (discount?: number): number => {
     if (!discount || discount <= 0 || discount > 100) return 0;
     return discount;
   };
-
-  // Calculate individual product price with discount
-  const calculateProductPrice = (product: CollectionProduct): number => {
-    const productDiscount = validateDiscount(product.discount);
-    const basePrice = product.originalPrice || product.price;
-    
-    if (productDiscount > 0) {
-      return basePrice - (basePrice * (productDiscount / 100));
-    }
-    return basePrice;
-  };
-
-  // Handle collection type items
-  if (item.type === 'collection' && item.collectionProducts) {
-    // Calculate total for all products in collection
-    const collectionTotal = item.collectionProducts.reduce((total, product) => {
-      const productPrice = calculateProductPrice(product);
-      return total + (productPrice * product.quantity);
-    }, 0);
-
-    // Apply collection-level discount if exists
-    const collectionDiscount = validateDiscount(item.discount);
-    if (collectionDiscount > 0) {
-      return collectionTotal - (collectionTotal * (collectionDiscount / 100));
-    }
-    return collectionTotal;
-  }
 
   // Handle regular items (perfume or sample)
   const itemDiscount = validateDiscount(item.discount);
@@ -115,7 +92,7 @@ export const calculateItemPrice = (item: CartItem): number => {
   if (itemDiscount > 0) {
     return basePrice - (basePrice * (itemDiscount / 100));
   }
-  return basePrice;
+  return item.price; // Use current price if no discount
 };
 
 export const calculateItemTotal = (item: CartItem): number => {
@@ -123,10 +100,15 @@ export const calculateItemTotal = (item: CartItem): number => {
   return itemPrice * item.quantity;
 };
 
-export const calculateCartTotals = (items: CartItem[]): { totalItems: number; totalPrice: number; totalDiscount: number } => {
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+// UPDATED: Calculate cart totals for new structure
+export const calculateCartTotals = (
+  items: CartItem[], 
+  collectionItems: CollectionCartItem[] = []
+): { totalItems: number; totalPrice: number; totalDiscount: number } => {
   
-  const { totalPrice, totalDiscount } = items.reduce((acc, item) => {
+  // Calculate individual items
+  const itemsTotalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const { totalPrice: itemsPrice, totalDiscount: itemsDiscount } = items.reduce((acc, item) => {
     const originalTotal = item.originalPrice * item.quantity;
     const discountedTotal = calculateItemTotal(item);
     const itemDiscount = originalTotal - discountedTotal;
@@ -137,7 +119,15 @@ export const calculateCartTotals = (items: CartItem[]): { totalItems: number; to
     };
   }, { totalPrice: 0, totalDiscount: 0 });
 
-  return { totalItems, totalPrice, totalDiscount };
+  // Calculate collection items (collections don't have discounts)
+  const collectionsTotalItems = collectionItems.reduce((sum, item) => sum + item.quantity, 0);
+  const collectionsTotalPrice = collectionItems.reduce((sum, item) => sum + item.totalPrice, 0);
+
+  return { 
+    totalItems: itemsTotalItems + collectionsTotalItems, 
+    totalPrice: itemsPrice + collectionsTotalPrice, 
+    totalDiscount: itemsDiscount // Only from individual items
+  };
 };
 
 export const applyDiscount = (price: number, discount: number): number => {
@@ -145,14 +135,13 @@ export const applyDiscount = (price: number, discount: number): number => {
   return price - (price * (discount / 100));
 };
 
-/**
- * Remove item from cart
- */
+// UPDATED: Remove item from cart (new structure)
 export const removeItemFromCart = (cart: Cart, itemId: string): Cart => {
   const updatedItems = cart.items.filter(item => item.id !== itemId);
-  const { totalItems, totalPrice, totalDiscount } = calculateCartTotals(updatedItems);
+  const { totalItems, totalPrice, totalDiscount } = calculateCartTotals(updatedItems, cart.collectionItems);
 
   return {
+    ...cart,
     items: updatedItems,
     totalItems,
     totalPrice,
@@ -160,9 +149,7 @@ export const removeItemFromCart = (cart: Cart, itemId: string): Cart => {
   };
 };
 
-/**
- * Update item quantity in cart
- */
+// UPDATED: Update item quantity in cart (new structure)
 export const updateItemQuantity = (cart: Cart, itemId: string, quantity: number): Cart => {
   if (quantity <= 0) {
     return removeItemFromCart(cart, itemId);
@@ -172,9 +159,10 @@ export const updateItemQuantity = (cart: Cart, itemId: string, quantity: number)
     item.id === itemId ? { ...item, quantity } : item
   );
 
-  const { totalItems, totalPrice, totalDiscount } = calculateCartTotals(updatedItems);
+  const { totalItems, totalPrice, totalDiscount } = calculateCartTotals(updatedItems, cart.collectionItems);
 
   return {
+    ...cart,
     items: updatedItems,
     totalItems,
     totalPrice,
@@ -182,21 +170,25 @@ export const updateItemQuantity = (cart: Cart, itemId: string, quantity: number)
   };
 };
 
+// UPDATED: Clear cart (new structure)
 export const clearCart = (): Cart => {
   return {
     items: [],
+    collectionItems: [], // Include collection items
     totalItems: 0,
     totalPrice: 0,
     discount: 0,
   };
 };
 
+// UPDATED: Get cart summary (new structure)
 export const getCartSummary = (cart: Cart): {
   itemCount: number;
   uniqueProducts: number;
   totalValue: number;
   averageItemValue: number;
   hasDiscounts: boolean;
+  collectionsCount: number;
 } => {
   const uniqueProducts = new Set(cart.items.map(item => item.productId)).size;
   const hasDiscounts = cart.items.some(item => item.discount && item.discount > 0);
@@ -208,28 +200,13 @@ export const getCartSummary = (cart: Cart): {
     totalValue: cart.totalPrice,
     averageItemValue,
     hasDiscounts,
+    collectionsCount: cart.collectionItems?.length || 0, // Add collections count
   };
 };
 
 export const transformToCartItem = (data: AddToCartData): CartItem => {
-  if (data.type === 'collection' && data.collectionProducts) {
-    return {
-      id: `${data.collectionId}_${Date.now()}`,
-      productId: data.productId,
-      name: data.name,
-      brand: data.brand,
-      imageUrl: data.imageUrl,
-      size: 'collection',
-      quantity: data.quantity,
-      price: data.price,
-      originalPrice: data.originalPrice,
-      discount: data.discount,
-      type: 'collection',
-      collectionId: data.collectionId,
-      collectionProducts: data.collectionProducts,
-    };
-  }
-
+  // SIMPLIFIED: No longer handle collection type in cart items
+  // Collections are handled separately via collectionItems array
   return {
     id: `${data.productId}_${data.size}_${Date.now()}`,
     productId: data.productId,
@@ -285,6 +262,8 @@ export const safeLocalStorage = {
   },
 };
 
+// DEPRECATED: This function is no longer needed with simplified collections
+// Keeping for backward compatibility
 export const calculateCollectionTotal = (collection: CollectionItem): number => {
   const productsTotal = collection.products.reduce((total, product) => {
     const productPrice = product.discount 
@@ -305,7 +284,7 @@ const generateSessionId = (): string => {
   return uuidv4();
 };
 
-// NEW: Merge guest cart with user cart
+// UPDATED: Merge guest cart with user cart (simplified for new backend)
 export const mergeGuestCartWithUserCart = async (
   guestCart: GuestCart,
   accessToken: string
@@ -317,20 +296,15 @@ export const mergeGuestCartWithUserCart = async (
         productId: item.productId,
         size: item.size,
         quantity: item.quantity,
-        type: item.type
       }, accessToken);
     }
 
-    // Handle collection items
+    // Handle collection items (simplified - just collectionId and quantity)
     for (const collection of guestCart.collectionItems) {
       await addCollectionToCartAPI({
         collectionId: collection.collectionId,
-        products: collection.products.map((p: { productId: string; size: string; quantity: number }) => ({
-          productId: p.productId,
-          size: p.size,
-          quantity: p.quantity
-        })),
-        quantity: collection.quantity
+        quantity: collection.quantity,
+        items: []
       }, accessToken);
     }
 
@@ -342,7 +316,7 @@ export const mergeGuestCartWithUserCart = async (
   }
 };
 
-// NEW: Save guest cart
+// UPDATED: Save guest cart (new structure)
 export const saveGuestCart = (cart: GuestCart): void => {
   try {
     localStorage.setItem(CART_CONFIG.STORAGE_KEYS.GUEST_CART, JSON.stringify(cart));
@@ -352,14 +326,14 @@ export const saveGuestCart = (cart: GuestCart): void => {
   }
 };
 
-// NEW: Get guest cart
+// UPDATED: Get guest cart (new structure)
 export const getGuestCart = (): GuestCart => {
   try {
     const cart = localStorage.getItem(CART_CONFIG.STORAGE_KEYS.GUEST_CART);
     if (!cart) {
       return {
         items: [],
-        collectionItems: [],
+        collectionItems: [], // Include collection items
         totalItems: 0,
         totalPrice: 0,
         discount: 0,
@@ -367,7 +341,15 @@ export const getGuestCart = (): GuestCart => {
         lastUpdated: new Date()
       };
     }
-    return JSON.parse(cart);
+    
+    const parsedCart = JSON.parse(cart);
+    
+    // Ensure collectionItems exists for backward compatibility
+    if (!parsedCart.collectionItems) {
+      parsedCart.collectionItems = [];
+    }
+    
+    return parsedCart;
   } catch (error) {
     console.error('Error getting guest cart:', error);
     return {
@@ -382,7 +364,7 @@ export const getGuestCart = (): GuestCart => {
   }
 };
 
-// NEW: Calculate guest cart totals
+// UPDATED: Calculate guest cart totals (new structure)
 export const calculateGuestCartTotals = (cart: GuestCart): GuestCart => {
   let totalItems = 0;
   let totalPrice = 0;
@@ -398,18 +380,77 @@ export const calculateGuestCartTotals = (cart: GuestCart): GuestCart => {
     totalDiscount += (item.originalPrice - itemPrice) * item.quantity;
   });
 
-  // Calculate collection items
+  // Calculate collection items (collections don't have discounts)
   cart.collectionItems.forEach(collection => {
     totalItems += collection.quantity;
-    totalPrice += collection.totalPrice;
-    totalDiscount += collection.discount;
+    totalPrice += collection.totalPrice * collection.quantity; // Fixed price * quantity
+    // Collections don't contribute to discount
   });
 
   return {
     ...cart,
     totalItems,
     totalPrice,
-    discount: totalDiscount,
+    discount: totalDiscount, // Only from individual items
     lastUpdated: new Date()
   };
+};
+
+// NEW: Helper functions for collection cart items
+export const addCollectionToGuestCart = (
+  cart: GuestCart, 
+  collectionData: {
+    collectionId: string;
+    collectionName: string;
+    collectionDescription?: string;
+    collectionImage?: string;
+    quantity: number;
+    price: number; // Fixed collection price
+  }
+): GuestCart => {
+  const existingIndex = cart.collectionItems.findIndex(
+    item => item.collectionId === collectionData.collectionId
+  );
+
+  if (existingIndex >= 0) {
+    // Update existing collection
+    cart.collectionItems[existingIndex].quantity += collectionData.quantity;
+  } else {
+    // Add new collection
+    cart.collectionItems.push({
+      id: `collection_${collectionData.collectionId}_${Date.now()}`,
+      collectionId: collectionData.collectionId,
+      collectionName: collectionData.collectionName,
+      collectionDescription: collectionData.collectionDescription,
+      collectionImage: collectionData.collectionImage,
+      quantity: collectionData.quantity,
+      totalPrice: collectionData.price, // Fixed price per collection
+      originalTotalPrice: collectionData.price, // No discounts for collections
+      discount: 0, // Collections don't have discounts
+    });
+  }
+
+  return calculateGuestCartTotals(cart);
+};
+
+export const removeCollectionFromGuestCart = (cart: GuestCart, collectionId: string): GuestCart => {
+  cart.collectionItems = cart.collectionItems.filter(item => item.collectionId !== collectionId);
+  return calculateGuestCartTotals(cart);
+};
+
+export const updateCollectionQuantityInGuestCart = (
+  cart: GuestCart, 
+  collectionId: string, 
+  quantity: number
+): GuestCart => {
+  if (quantity <= 0) {
+    return removeCollectionFromGuestCart(cart, collectionId);
+  }
+
+  const collectionIndex = cart.collectionItems.findIndex(item => item.collectionId === collectionId);
+  if (collectionIndex >= 0) {
+    cart.collectionItems[collectionIndex].quantity = quantity;
+  }
+
+  return calculateGuestCartTotals(cart);
 };

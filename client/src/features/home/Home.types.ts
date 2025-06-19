@@ -15,7 +15,7 @@ export interface Size {
   
   export interface CollectionProduct {
     _id: string;
-    name: string;
+    title: string;
     image: string;
   }
   
@@ -23,7 +23,18 @@ export interface Size {
     _id: string;
     title: string;
     description: string;
-    products: CollectionProduct[];
+    image: string;
+    price: number;
+    products: Array<{
+      _id: string;
+      name: string;
+      brand: string;
+      image: string;
+      sizes: Array<{
+        size: string;
+        price: number;
+      }>;
+    }>;
   }
   
   export interface Feedback {
@@ -32,14 +43,40 @@ export interface Size {
   }
   
   export interface HomepageData {
-    featuredItems: FeaturedItem[];
+    featuredItems: Array<{
+      _id: string;
+      name: string;
+      brand: string;
+      price: number;
+      sizes: Array<{ label: string; price: number }>;
+      image: string;
+      type: string;
+    }>;
     collections: Collection[];
-    feedbacks: Feedback[];
+    feedbacks: Array<{
+      _id: string;
+      screenshot: string;
+    }>;
   }
   
   export interface ApiResponse<T> {
-    success: boolean;
     data: T;
     message?: string;
+    status?: number;
+  }
+  
+  export interface AddToCollectionCartRequest {
+    collectionId: string;
+    products: Array<{
+      productId: string;
+      size: string;
+      quantity: number;
+    }>;
+    quantity?: number;
+  }
+  
+  export interface HomeData {
+    collections: Collection[];
+    // ... other existing types ...
   }
   

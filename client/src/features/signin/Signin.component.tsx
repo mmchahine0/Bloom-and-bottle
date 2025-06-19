@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, KeyRound } from "lucide-react";
+import { Mail, KeyRound } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../../redux/slices/authSlices";
@@ -460,43 +460,23 @@ const Signin = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <div className="relative">
-                      <Lock
-                        className="absolute left-3 top-3 h-4 w-4 text-gray-400"
-                        aria-hidden="true"
-                      />
-                      <Input
-                        id="newPassword"
-                        name="newPassword"
-                        type="password"
-                        placeholder="Enter new password"
-                        value={resetPasswordInput.newPassword}
-                        onChange={(e) => {
-                          setResetPasswordInput((prev) => ({
-                            ...prev,
-                            newPassword: e.target.value,
-                          }));
-                          const passwordError = validateField(
-                            "password",
-                            e.target.value
-                          );
-                          setErrors((prev) => ({
-                            ...prev,
-                            password: passwordError,
-                          }));
-                        }}
-                        className={`pl-10 ${
-                          errors.password ? "border-red-500" : ""
-                        }`}
-                      />
-                      {errors.password && (
-                        <p className="mt-1 text-xs text-red-500">
-                          {errors.password}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+  <Label htmlFor="newPassword">New Password</Label>
+  <PasswordInput
+    credentials={{ email: '', password: resetPasswordInput.newPassword }}
+    errors={{ password: errors.password }}
+    handleChange={(e) => {
+      setResetPasswordInput((prev) => ({
+        ...prev,
+        newPassword: e.target.value,
+      }));
+      const passwordError = validateField("password", e.target.value);
+      setErrors((prev) => ({
+        ...prev,
+        password: passwordError,
+      }));
+    }}
+  />
+</div>
 
                   <div className="text-center">
                     <Button

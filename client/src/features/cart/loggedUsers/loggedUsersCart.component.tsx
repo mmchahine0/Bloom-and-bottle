@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
-import { Plus, Minus, Trash2, ShoppingCart, MessageCircle, AlertTriangle  } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, MessageCircle, AlertTriangle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/common/loading spinner/LoadingSpinner.component';
 import { queryClient } from '@/lib/queryClient';
 import type { RootState } from '@/redux/persist/persist';
-import type { CartItem } from '../Cart.types';
-import type { LoggedUserWhatsAppOrder } from './loggedUsersCart.types';
+import type { LoggedUserWhatsAppOrder, WhatsAppCollectionItem } from './loggedUsersCart.types';
 import {
   getCartFromAPI,
   incrementCartAPI,
@@ -19,8 +18,12 @@ import {
   removeFromCartAPI,
   clearCartAPI,
   placeOrderAPI,
+  removeCollectionFromCartAPI,
+  incrementCollectionQuantityAPI,
+  decrementCollectionQuantityAPI,
 } from './loggedUsersCart.services';
 import { Link } from 'react-router-dom';
+import type { CollectionCartItem } from '../Cart.types';
 
 const WHATSAPP_NUMBER = '+96176913342';
 
@@ -41,8 +44,9 @@ const LoggedUsersCart: React.FC = () => {
     queryKey: ['cart', userId],
     queryFn: () => getCartFromAPI(accessToken!),
     enabled: !!accessToken && !!userId,
-    staleTime: 1000 * 60 * 5,
   });
+
+  console.log('Cart Data:', cart);
 
   // Increment quantity mutation
   const incrementQuantityMutation = useMutation({
@@ -116,6 +120,56 @@ const LoggedUsersCart: React.FC = () => {
     },
   });
 
+  // Collection mutations
+  const removeCollectionMutation = useMutation({
+    mutationFn: (itemId: string) => removeCollectionFromCartAPI(itemId, accessToken!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart', userId] });
+      toast({
+        title: 'Success',
+        description: 'Collection removed from cart',
+      });
+    },
+    onError: (error) => {
+      console.error('Error removing collection:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove collection from cart',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const incrementCollectionMutation = useMutation({
+    mutationFn: (itemId: string) => incrementCollectionQuantityAPI(itemId, accessToken!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart', userId] });
+    },
+    onError: (error) => {
+      console.error('Error incrementing collection:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update collection quantity',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const decrementCollectionMutation = useMutation({
+    mutationFn: (itemId: string) => decrementCollectionQuantityAPI(itemId, accessToken!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart', userId] });
+    },
+    onError: (error) => {
+      console.error('Error decrementing collection:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update collection quantity',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Update item quantity
   const updateQuantity = (itemId: string, newQuantity: number, currentQuantity: number) => {
     if (newQuantity <= 0) {
@@ -140,7 +194,34 @@ const LoggedUsersCart: React.FC = () => {
     clearCartMutation.mutate();
   };
 
-  // Format WhatsApp message for logged users
+  // Update collection quantity
+  const updateCollectionQuantity = (itemId: string, newQuantity: number, currentQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeCollectionMutation.mutate(itemId);
+      return;
+    }
+
+    if (newQuantity > currentQuantity) {
+      incrementCollectionMutation.mutate(itemId);
+    } else {
+      decrementCollectionMutation.mutate(itemId);
+    }
+  };
+
+  // Remove collection from cart
+  const removeCollection = (itemId: string) => {
+    removeCollectionMutation.mutate(itemId);
+  };
+
+  // FIXED: Helper to get collection unit price and total
+  const getCollectionPricing = (collection: CollectionCartItem) => {
+    return {
+      unitPrice: collection.totalPrice, // This is per-unit price from backend
+      totalPrice: collection.totalPrice * collection.quantity // Calculate total
+    };
+  };
+
+  // UPDATED: Format WhatsApp message for simplified collections
   const formatWhatsAppMessage = (orderData: LoggedUserWhatsAppOrder): string => {
     let message = `🛍️ *New Order* 🛍️\n\n`;
     message += `📋 *Order ID:* ${orderData.orderId}\n`;
@@ -148,14 +229,30 @@ const LoggedUsersCart: React.FC = () => {
     message += `📧 *Email:* ${orderData.customerInfo.email || 'N/A'}\n`;
     message += `🆔 *User ID:* ${orderData.customerInfo.userId}\n`;
     message += `📅 *Date:* ${orderData.timestamp}\n\n`;
-    message += `🎁 *Items Ordered:*\n`;
     
-    orderData.items.forEach((item, index) => {
-      message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
-      message += `   Size: ${item.size}\n`;
-      message += `   Quantity: ${item.quantity}\n`;
-      message += `   Price: ${item.price.toFixed(2)} USD\n\n`;
-    });
+    // Add individual items
+    if (orderData.items.length > 0) {
+      message += `🎁 *Individual Items:*\n`;
+      orderData.items.forEach((item, index) => {
+        message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
+        message += `   Size: ${item.size}\n`;
+        message += `   Quantity: ${item.quantity}\n`;
+        message += `   Price: ${item.price.toFixed(2)} USD\n\n`;
+      });
+    }
+
+    // Add collections (simplified)
+    if (orderData.collections && orderData.collections.length > 0) {
+      message += `📦 *Collections:*\n`;
+      orderData.collections.forEach((collection: WhatsAppCollectionItem, index: number) => {
+        message += `${index + 1}. *${collection.name}*\n`;
+        if (collection.description) {
+          message += `   Description: ${collection.description}\n`;
+        }
+        message += `   Quantity: ${collection.quantity}\n`;
+        message += `   Total Price: ${collection.totalPrice.toFixed(2)} USD\n\n`;
+      });
+    }
 
     message += `📊 *Order Summary:*\n`;
     message += `Total Items: ${orderData.totalItems}\n`;
@@ -165,9 +262,9 @@ const LoggedUsersCart: React.FC = () => {
     return message;
   };
 
-  // Handle checkout process
+  // UPDATED: Handle checkout process to include collections
   const handleCheckout = async () => {
-    if (!cart || cart.items.length === 0) {
+    if (!cart || (cart.items.length === 0 && (!cart.collectionItems || cart.collectionItems.length === 0))) {
       toast({
         title: 'Error',
         description: 'Your cart is empty',
@@ -194,8 +291,13 @@ const LoggedUsersCart: React.FC = () => {
           productId: item.productId,
           size: item.size,
           quantity: item.quantity,
-          price: getItemDisplayPrice(item)
+          price: item.price
         })),
+        collectionItems: cart.collectionItems?.map(collection => ({
+          collectionId: collection.collectionId,
+          quantity: collection.quantity,
+          totalPrice: getCollectionPricing(collection).totalPrice // Use calculated total
+        })) || [],
         totalPrice: cart.totalPrice
       }, accessToken);
 
@@ -215,8 +317,14 @@ const LoggedUsersCart: React.FC = () => {
           brand: item.brand,
           size: item.size,
           quantity: item.quantity,
-          price: getItemDisplayPrice(item),
+          price: item.price,
         })),
+        collections: cart.collectionItems?.map(collection => ({
+          name: collection.collectionName,
+          description: collection.collectionDescription,
+          quantity: collection.quantity,
+          totalPrice: getCollectionPricing(collection).totalPrice, // Use calculated total
+        })) || [],
         totalPrice: cart.totalPrice,
         totalItems: cart.totalItems,
         timestamp: new Date().toLocaleString(),
@@ -255,14 +363,6 @@ const LoggedUsersCart: React.FC = () => {
     }
   };
 
-  // Get item display price (considering discount)
-  const getItemDisplayPrice = (item: CartItem): number => {
-    if (item.discount && item.discount > 0) {
-      return item.originalPrice - (item.originalPrice * (item.discount / 100));
-    }
-    return item.price;
-  };
-
   // Loading state
   if (isLoadingCart) {
     return (
@@ -295,7 +395,7 @@ const LoggedUsersCart: React.FC = () => {
   }
 
   // Empty cart state
-  if (!cart || cart.items.length === 0) {
+  if (!cart || (cart.items.length === 0 && (!cart.collectionItems || cart.collectionItems.length === 0))) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-2xl mx-auto">
@@ -304,12 +404,12 @@ const LoggedUsersCart: React.FC = () => {
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
             <p className="text-gray-500 mb-6">Add some products to get started!</p>
             <Link to={"/home"}>
-            <Button 
-              onClick={() => window.history.back()}
-              className="bg-black text-white hover:bg-gray-800"
-            >
-              Continue Shopping
-            </Button>
+              <Button 
+                onClick={() => window.history.back()}
+                className="bg-black text-white hover:bg-gray-800"
+              >
+                Continue Shopping
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -344,6 +444,7 @@ const LoggedUsersCart: React.FC = () => {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Individual Items */}
                 {cart.items.map((item) => (
                   <div key={item.id} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
                     {/* Product Image */}
@@ -371,21 +472,19 @@ const LoggedUsersCart: React.FC = () => {
                         
                         {/* Price */}
                         <div className="text-right mt-2 sm:mt-0">
-                          {item.discount && item.discount > 0 ? (
+                          {(item.discount ?? 0) > 0 ? (
                             <div>
                               <p className="text-lg font-semibold text-red-600">
-                                ${getItemDisplayPrice(item).toFixed(2)}
+                                ${item.price.toFixed(2)} USD
+                                <span className="text-sm text-gray-500 line-through ml-2">
+                                  ${item.originalPrice.toFixed(2)} USD
+                                </span>
+                                <span className="ml-2 text-xs text-red-600 font-semibold">{item.discount}% OFF</span>
                               </p>
-                              <p className="text-sm text-gray-500 line-through">
-                                ${item.originalPrice.toFixed(2)}
-                              </p>
-                              <Badge variant="destructive" className="text-xs">
-                                {item.discount}% OFF
-                              </Badge>
                             </div>
                           ) : (
                             <p className="text-lg font-semibold">
-                              ${item.price.toFixed(2)}
+                              ${item.price.toFixed(2)} USD
                             </p>
                           )}
                         </div>
@@ -445,12 +544,118 @@ const LoggedUsersCart: React.FC = () => {
                       {/* Item Total */}
                       <div className="text-right">
                         <p className="text-sm text-gray-600">
-                          Subtotal: ${(getItemDisplayPrice(item) * item.quantity).toFixed(2)}
+                          Subtotal: ${(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>
                   </div>
                 ))}
+
+                {/* Collections - FIXED for proper pricing */}
+                {cart.collectionItems?.map((collection: CollectionCartItem) => {
+                  const { unitPrice, totalPrice } = getCollectionPricing(collection);
+                  
+                  return (
+                    <div key={collection.id} className="flex flex-col gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <Package className="w-6 h-6 text-purple-600" />
+                          <div>
+                            <h3 className="font-semibold text-lg">{collection.collectionName}</h3>
+                            {collection.collectionDescription && (
+                              <p className="text-sm text-gray-600 mt-1">{collection.collectionDescription}</p>
+                            )}
+                            <Badge variant="secondary" className="mt-1 bg-purple-100 text-purple-800">
+                              Collection Bundle
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {/* Collection Price - FIXED */}
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-purple-700">
+                            ${unitPrice.toFixed(2)} each
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Total: ${totalPrice.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Collection Image - OPTIONAL */}
+                      {collection.collectionImage && (
+                        <div className="w-full h-48 rounded-md overflow-hidden">
+                          <img
+                            src={collection.collectionImage}
+                            alt={collection.collectionName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-collection.png';
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Collection Quantity Controls */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center border rounded-md">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => decrementCollectionMutation.mutate(collection.id)}
+                            disabled={collection.quantity <= 1 || decrementCollectionMutation.isPending}
+                            className="px-3 py-1"
+                          >
+                            <Minus size={16} />
+                          </Button>
+                          <Input
+                            type="number"
+                            value={collection.quantity}
+                            onChange={(e) => {
+                              const newQuantity = parseInt(e.target.value) || 1;
+                              if (newQuantity > 0) {
+                                updateCollectionQuantity(collection.id, newQuantity, collection.quantity);
+                              }
+                            }}
+                            className="w-16 text-center border-0 focus-visible:ring-0"
+                            min="1"
+                            disabled={incrementCollectionMutation.isPending || decrementCollectionMutation.isPending}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => incrementCollectionMutation.mutate(collection.id)}
+                            disabled={incrementCollectionMutation.isPending || decrementCollectionMutation.isPending}
+                            className="px-3 py-1"
+                          >
+                            <Plus size={16} />
+                          </Button>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCollection(collection.id)}
+                          disabled={removeCollectionMutation.isPending}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                        >
+                          {removeCollectionMutation.isPending ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Collection Subtotal - FIXED */}
+                      <div className="text-right pt-2 border-t">
+                        <p className="text-sm text-gray-600">
+                          Collection Subtotal: ${totalPrice.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
@@ -480,7 +685,7 @@ const LoggedUsersCart: React.FC = () => {
 
                 <Button
                   onClick={handleCheckout}
-                  disabled={isProcessingCheckout || cart.items.length === 0}
+                  disabled={isProcessingCheckout || (cart.items.length === 0 && (!cart.collectionItems || cart.collectionItems.length === 0))}
                   className="w-full bg-black text-white hover:bg-gray-800 h-12"
                 >
                   {isProcessingCheckout ? (

@@ -38,7 +38,6 @@ export function DetailDialog({
   onStatusChange,
 }: DetailDialogProps) {
   if (!order) return null;
- console.log(order.items)
   // Get status badge class based on status
   const getStatusBadgeClass = (status: string) => {
     switch (status) {

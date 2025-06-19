@@ -6,6 +6,7 @@ export interface Collection {
     description?: string;
     image?: string;
     featured: boolean;
+    price: number;
     perfumes?: ProductWithCreator[];
     createdAt: string;
     updatedAt?: string;

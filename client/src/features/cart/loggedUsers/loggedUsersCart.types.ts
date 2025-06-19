@@ -1,14 +1,19 @@
-import type { CartItem, Cart, CollectionProduct } from '../Cart.types';
+import type { CartItem, Cart } from '../Cart.types';
 
-// API Request/Response Types
+// UPDATED: API Response Types to match new backend structure
 export interface CartAPIResponse {
   success: boolean;
-  message: string;
+  message?: string;
   data: {
     items: CartItemAPI[];
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
+    collectionItems: CollectionCartItemAPI[];
+    summary: {
+      totalItems: number;
+      totalPrice: number;
+      totalDiscount: number;
+      subtotalProducts: number;
+      subtotalCollections: number;
+    };
   };
 }
 
@@ -22,17 +27,32 @@ export interface CartItemAPI {
   quantity: number;
   price: number;
   originalPrice: number;
-  discount?: number;
-  type: 'perfume' | 'sample' | 'collection';
+  discount: number;
+  type: 'perfume' | 'sample';
+}
+
+// UPDATED: Simplified collection response to match backend
+export interface CollectionCartItemAPI {
+  id: string;
+  collectionId: string;
+  collectionName: string;
+  collectionDescription?: string;
+  collectionImage?: string;
+  quantity: number;
+  price: number; // Fixed collection price per unit (backend provides this)
 }
 
 export interface AddToCartRequest {
   productId: string;
   size: string;
   quantity: number;
-  type: 'perfume' | 'sample' | 'collection';
+  type?: 'perfume' | 'sample' | 'collection';
   collectionId?: string;
-  collectionProducts?: CollectionProduct[];
+  collectionProducts?: Array<{
+    productId: string;
+    size: string;
+    quantity: number;
+  }>;
 }
 
 export interface UpdateCartRequest {
@@ -46,47 +66,24 @@ export interface RemoveFromCartRequest {
 
 export interface AddToCartAPIResponse {
   success: boolean;
-  message: string;
+  message?: string;
   data: {
     items: CartItemAPI[];
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
+    collectionItems: CollectionCartItemAPI[]; 
+    summary: {
+      totalItems: number;
+      totalPrice: number;
+      totalDiscount: number;
+      subtotalProducts: number;
+      subtotalCollections: number;
+    };
   };
 }
 
-export interface UpdateCartAPIResponse {
-  success: boolean;
-  message: string;
-  data: {
-    items: CartItemAPI[];
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
-  };
-}
-
-export interface RemoveCartAPIResponse {
-  success: boolean;
-  message: string;
-  data: {
-    items: CartItemAPI[];
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
-  };
-}
-
-export interface ClearCartAPIResponse {
-  success: boolean;
-  message: string;
-  data: {
-    items: CartItemAPI[];
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
-  };
-}
+// Since these interfaces are identical to AddToCartAPIResponse, we can use type aliases instead
+export type UpdateCartAPIResponse = AddToCartAPIResponse;
+export type RemoveCartAPIResponse = AddToCartAPIResponse;
+export type ClearCartAPIResponse = AddToCartAPIResponse;
 
 // Order Types
 export interface SaveOrderRequest {
@@ -151,51 +148,16 @@ export interface GetUserOrdersResponse {
   };
 }
 
-// Sync and Conflict Resolution Types
-export interface SyncStatus {
-  isLoading: boolean;
-  lastSynced: Date | null;
-  hasConflict: boolean;
-  syncError: string | null;
-}
-
-export interface CartConflict {
-  localCart: CartItem[];
-  serverCart: CartItem[];
-  conflictType: 'local_newer' | 'server_newer' | 'different_items';
-}
-
-export interface ConflictResolution {
-  strategy: 'keep_local' | 'keep_server' | 'merge';
-  items: CartItem[];
-}
-
-export interface MigrateGuestCartRequest {
-  guestCart: {
-    items: Array<{
-      productId: string;
-      size: string;
-      quantity: number;
-    }>;
-  };
-}
-
-export interface MigrateGuestCartResponse {
-  success: boolean;
-  message: string;
-  data: {
-    items: CartItemAPI[];
-    totalItems: number;
-    totalPrice: number;
-    discount: number;
-    migratedItems: number;
-  };
-}
-
 // WhatsApp Order Types for Logged Users
+export interface WhatsAppCollectionItem {
+  name: string;
+  quantity: number;
+  totalPrice: number;
+  description?: string;
+}
+
 export interface LoggedUserWhatsAppOrder {
   orderId: string;
-  databaseOrderId: string;
   items: Array<{
     name: string;
     brand: string;
@@ -203,95 +165,30 @@ export interface LoggedUserWhatsAppOrder {
     quantity: number;
     price: number;
   }>;
+  collections?: WhatsAppCollectionItem[];
   totalPrice: number;
   totalItems: number;
   timestamp: string;
   customerInfo: {
+    userId: string;
     name?: string;
     email?: string;
-    userId: string;
   };
+  databaseOrderId: string;
 }
 
-// Cart State Types
-export interface LoggedUserCart {
-  items: CartItem[];
-  totalItems: number;
-  totalPrice: number;
-  discount: number;
-  lastSynced: Date | null;
+// UPDATED: Collection request to match backend
+export interface AddCollectionToCartRequest {
+  collectionId: string;
+  quantity: number;
+  items: Array<{
+    productId: string;
+    size: string;
+    quantity: number;
+  }>;
 }
 
-export interface CartOperationState {
-  isLoading: boolean;
-  error: string | null;
-  operation: 'add' | 'update' | 'remove' | 'clear' | 'sync' | null;
-}
-
-// Local Storage Types for Logged Users (backup)
-export interface LoggedUserLocalCart {
-  items: CartItem[];
-  totalItems: number;
-  totalPrice: number;
-  discount: number;
-  userId: string;
-  lastSynced: Date;
-  needsSync: boolean;
-}
-
-export interface OfflineCartAction {
-  type: 'add' | 'update' | 'remove' | 'clear';
-  payload: CartItem | string | null;
-  timestamp: Date;
-  synced: boolean;
-}
-
-// Utility Types
-export interface CartItemTransform {
-  fromAPI: (apiItem: CartItemAPI) => CartItem;
-  toAPI: (cartItem: CartItem) => AddToCartRequest;
-}
-
-export interface CartCalculations {
-  calculateItemPrice: (item: CartItem) => number;
-  calculateCartTotal: (items: CartItem[]) => { totalItems: number; totalPrice: number };
-  applyDiscount: (price: number, discount: number) => number;
-}
-
-// Helper function to transform CartItemAPI to CartItem
-export const transformCartItemAPI = (apiItem: CartItemAPI): CartItem => ({
-  id: apiItem.id,
-  productId: apiItem.productId,
-  name: apiItem.name,
-  brand: apiItem.brand,
-  imageUrl: apiItem.imageUrl,
-  size: apiItem.size,
-  quantity: apiItem.quantity,
-  price: apiItem.price,
-  originalPrice: apiItem.originalPrice,
-  discount: apiItem.discount,
-  type: apiItem.type
-});
-
-// Helper function to transform API cart response to Cart type
-export const transformCartAPIResponse = (response: CartAPIResponse): Cart => {
-  if (!response?.data?.items) {
-    return {
-      items: [],
-      totalItems: 0,
-      totalPrice: 0,
-      discount: 0
-    };
-  }
-
-  return {
-    items: response.data.items.map(transformCartItemAPI),
-    totalItems: response.data.totalItems || 0,
-    totalPrice: response.data.totalPrice || 0,
-    discount: response.data.discount || 0
-  };
-};
-
+// UPDATED: Place order request to match backend
 export interface PlaceOrderRequest {
   items: Array<{
     productId: string;
@@ -299,8 +196,12 @@ export interface PlaceOrderRequest {
     quantity: number;
     price: number;
   }>;
+  collectionItems: Array<{
+    collectionId: string;
+    quantity: number;
+    totalPrice: number;
+  }>;
   totalPrice: number;
-  
 }
 
 export interface PlaceOrderAPIResponse {
@@ -320,3 +221,51 @@ export interface PlaceOrderAPIResponse {
     createdAt: string;
   };
 }
+
+// UPDATED: Helper function to transform CartItemAPI to CartItem
+export const transformCartItemAPI = (apiItem: CartItemAPI): CartItem => ({
+  id: apiItem.id,
+  productId: apiItem.productId,
+  name: apiItem.name,
+  brand: apiItem.brand,
+  imageUrl: apiItem.imageUrl,
+  size: apiItem.size,
+  quantity: apiItem.quantity,
+  price: apiItem.price,
+  originalPrice: apiItem.originalPrice,
+  discount: apiItem.discount,
+  type: apiItem.type
+});
+
+// FIXED: Helper function to transform API cart response to Cart type
+export const transformCartAPIResponse = (response: CartAPIResponse): Cart => {
+  if (!response || !response.data) {
+    return {
+      items: [],
+      collectionItems: [],
+      totalItems: 0,
+      totalPrice: 0,
+      discount: 0,
+    };
+  }
+
+  return {
+    items: response.data.items.map(transformCartItemAPI),
+    collectionItems: response.data.collectionItems.map(item => ({
+      id: item.id,
+      collectionId: item.collectionId,
+      collectionName: item.collectionName,
+      collectionDescription: item.collectionDescription,
+      collectionImage: item.collectionImage,
+      quantity: item.quantity,
+      // FIXED: Don't multiply by quantity here - backend provides per-unit price
+      // The totalPrice should be calculated as price * quantity in the display logic
+      totalPrice: item.price, // This is the per-unit price from backend
+      originalTotalPrice: item.price, // No discounts for collections
+      discount: 0, // Collections don't have discounts
+    })),
+    totalItems: response.data.summary.totalItems,
+    totalPrice: response.data.summary.totalPrice,
+    discount: response.data.summary.totalDiscount,
+  };
+};

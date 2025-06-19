@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/persist/persist";
 import { getUserOrders } from "./Orders.services";
-import { UserOrder } from "./Orders.types";
+import { UserOrder, OrderItem, OrderCollectionItem } from "./Orders.types";
 import { Helmet } from "react-helmet-async";
 import {
   Table,
@@ -12,25 +12,46 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/common/loading spinner/LoadingSpinner.component";
 import { format } from "date-fns";
-import { ChevronDown, ChevronRight, Package, Calendar, DollarSign } from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  Package, 
+  Calendar, 
+  DollarSign,
+  ChevronLeft,
+  ChevronRightIcon
+} from "lucide-react";
 
 const Orders = () => {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10;
 
   const accessToken = useSelector(
     (state: RootState) => state.auth?.accessToken
   );
 
-  const { data: orders, isLoading, error } = useQuery({
-    queryKey: ["userOrders"],
-    queryFn: () => getUserOrders(accessToken),
+  const { data: ordersResponse, isLoading, error, refetch } = useQuery({
+    queryKey: ["userOrders", currentPage],
+    queryFn: () => getUserOrders(accessToken, currentPage, ordersPerPage),
     enabled: !!accessToken,
+    staleTime: 0, // Always stale
   });
+
+  useEffect(() => {
+    if (accessToken) {
+      refetch();
+    }
+    // eslint-disable-next-line
+  }, []); // Only on mount
+
+  const orders = ordersResponse?.data || [];
+  const pagination = ordersResponse?.pagination;
 
   const toggleOrderExpansion = (orderId: string) => {
     setExpandedOrders(prev => {
@@ -44,7 +65,6 @@ const Orders = () => {
     });
   };
 
-  // Get status badge class based on status
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "completed":
@@ -71,9 +91,63 @@ const Orders = () => {
     }
   };
 
+  // Render individual product item
+  const ProductItem = ({ item }: { item: OrderItem }) => (
+    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+      {item.product.imageUrl && (
+        <img
+          src={item.product.imageUrl}
+          alt={item.product.name}
+          className="w-12 h-12 lg:w-16 lg:h-16 object-cover rounded"
+        />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm lg:text-base truncate">{item.product.name}</p>
+        <p className="text-xs lg:text-sm text-gray-600">{item.product.brand}</p>
+        <p className="text-xs lg:text-sm text-gray-500">
+          Size: {item.size} • Qty: {item.quantity} • ${item.price.toFixed(2)}
+        </p>
+      </div>
+    </div>
+  );
+
+  // Render collection item
+  const CollectionItem = ({ item }: { item: OrderCollectionItem }) => (
+    <div className="p-3 bg-blue-50 rounded border border-blue-200">
+      <div className="flex items-center gap-3 mb-2">
+        {item.collectionId.image && (
+          <img
+            src={item.collectionId.image}
+            alt={item.collectionName}
+            className="w-12 h-12 lg:w-16 lg:h-16 object-cover rounded"
+          />
+        )}
+        <div className="flex-1">
+          <p className="font-medium text-sm lg:text-base text-blue-900">
+            📦 {item.collectionName} (Collection)
+          </p>
+          <p className="text-xs lg:text-sm text-blue-700">
+            Qty: {item.quantity} • Total: ${item.totalPrice.toFixed(2)}
+          </p>
+        </div>
+      </div>
+      
+      {/* Products in collection */}
+      <div className="ml-4 space-y-1">
+        <p className="text-xs font-medium text-gray-700">Includes:</p>
+        {item.products.map((product, index) => (
+          <div key={index} className="text-xs text-gray-600 ml-2">
+            • {product.name} ({product.size}) x{product.quantity}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   // Mobile card view for orders
   const OrderCard = ({ order }: { order: UserOrder }) => {
     const isExpanded = expandedOrders.has(order._id);
+    const totalItems = order.items.length + order.collectionItems.length;
     
     return (
       <Card className="p-4 mb-4 hover:shadow-md transition-shadow">
@@ -94,7 +168,7 @@ const Orders = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <DollarSign className="w-3 h-3" />
-                  ${order.totalPrice.toFixed(2)}
+                  {order.totalPrice.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -110,7 +184,12 @@ const Orders = () => {
 
           {/* Order Summary */}
           <div className="text-sm text-gray-600">
-            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+            {totalItems} item{totalItems !== 1 ? 's' : ''} 
+            {order.collectionItems.length > 0 && (
+              <span className="text-blue-600 ml-2">
+                (includes {order.collectionItems.length} collection{order.collectionItems.length !== 1 ? 's' : ''})
+              </span>
+            )}
           </div>
 
           {/* Expand/Collapse Button */}
@@ -138,29 +217,54 @@ const Orders = () => {
             <div className="pt-3 border-t space-y-3">
               <h4 className="font-medium text-sm">Order Items:</h4>
               <div className="space-y-2">
+                {/* Regular Products */}
                 {order.items.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                    {item.product.imageUrl && (
-                      <img
-                        src={item.product.imageUrl}
-                        alt={item.product.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.product.name}</p>
-                      <p className="text-xs text-gray-600">{item.product.brand}</p>
-                      <p className="text-xs text-gray-500">
-                        Size: {item.size} • Qty: {item.quantity} • ${item.price.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
+                  <ProductItem key={`item-${index}`} item={item} />
+                ))}
+                
+                {/* Collection Items */}
+                {order.collectionItems.map((item, index) => (
+                  <CollectionItem key={`collection-${index}`} item={item} />
                 ))}
               </div>
             </div>
           )}
         </div>
       </Card>
+    );
+  };
+
+  // Pagination Component
+  const Pagination = () => {
+    if (!pagination || pagination.totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between mt-6">
+        <div className="text-sm text-gray-600">
+          Page {pagination.currentPage} of {pagination.totalPages} 
+          ({pagination.totalOrders} total orders)
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={!pagination.hasPrevPage}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={!pagination.hasNextPage}
+          >
+            Next
+            <ChevronRightIcon className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </div>
     );
   };
 
@@ -233,6 +337,8 @@ const Orders = () => {
                   <TableBody>
                     {orders.map((order: UserOrder) => {
                       const isExpanded = expandedOrders.has(order._id);
+                      const totalItems = order.items.length + order.collectionItems.length;
+                      
                       return (
                         <>
                           <TableRow
@@ -264,7 +370,12 @@ const Orders = () => {
                               </span>
                             </TableCell>
                             <TableCell>
-                              {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                              {totalItems} item{totalItems !== 1 ? 's' : ''}
+                              {order.collectionItems.length > 0 && (
+                                <div className="text-xs text-blue-600">
+                                  +{order.collectionItems.length} collection{order.collectionItems.length !== 1 ? 's' : ''}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               ${order.totalPrice.toFixed(2)}
@@ -281,24 +392,17 @@ const Orders = () => {
                                 <div className="py-4">
                                   <h4 className="font-semibold mb-3 text-gray-900">Order Items:</h4>
                                   <div className="grid gap-3">
+                                    {/* Regular Products */}
                                     {order.items.map((item, index) => (
-                                      <div key={index} className="flex items-center gap-4 p-3 bg-white rounded-lg border">
-                                        {item.product.imageUrl && (
-                                          <img
-                                            src={item.product.imageUrl}
-                                            alt={item.product.name}
-                                            className="w-16 h-16 object-cover rounded"
-                                          />
-                                        )}
-                                        <div className="flex-1">
-                                          <h5 className="font-medium text-gray-900">{item.product.name}</h5>
-                                          <p className="text-sm text-gray-600">{item.product.brand}</p>
-                                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                                            <span>Size: {item.size}</span>
-                                            <span>Quantity: {item.quantity}</span>
-                                            <span className="font-medium">${item.price.toFixed(2)}</span>
-                                          </div>
-                                        </div>
+                                      <div key={`desktop-item-${index}`} className="p-3 bg-white rounded-lg border">
+                                        <ProductItem item={item} />
+                                      </div>
+                                    ))}
+                                    
+                                    {/* Collection Items */}
+                                    {order.collectionItems.map((item, index) => (
+                                      <div key={`desktop-collection-${index}`} className="bg-white rounded-lg border">
+                                        <CollectionItem item={item} />
                                       </div>
                                     ))}
                                   </div>
@@ -323,10 +427,8 @@ const Orders = () => {
               </div>
             </div>
 
-            {/* Order Summary */}
-            <div className="mt-8 text-center text-sm text-gray-500">
-              Showing {orders.length} order{orders.length !== 1 ? 's' : ''}
-            </div>
+            {/* Pagination */}
+            <Pagination />
           </>
         )}
       </main>

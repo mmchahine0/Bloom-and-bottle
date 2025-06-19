@@ -460,6 +460,7 @@ const CollectionsDashboard = () => {
                     </TableHead>
                     <TableHead className="w-[300px]" scope="col">Description</TableHead>
                     <TableHead className="w-[100px]" scope="col">Products</TableHead>
+                    <TableHead className="w-[100px]" scope="col">Price</TableHead>
                     <TableHead className="w-[100px]" scope="col">Featured</TableHead>
                     <TableHead className="w-[150px]" scope="col">
                       <div
@@ -518,6 +519,9 @@ const CollectionsDashboard = () => {
                           <Badge variant="outline">
                             {collection.perfumes?.length || 0} items
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          ${collection.price?.toFixed(2) || '0.00'}
                         </TableCell>
                         <TableCell>
                           <Badge variant={collection.featured ? "default" : "secondary"}>

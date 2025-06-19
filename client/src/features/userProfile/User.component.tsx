@@ -17,6 +17,7 @@ import { DialogForm } from "@/components/common/dialog form/DialogForm.component
 import { User, Mail, Key } from "lucide-react";
 import axios from "axios";
 import { LoadingSpinner } from "@/components/common/loading spinner/LoadingSpinner.component";
+import { PasswordInput } from "@/components/common/passwordInput/Password.component";
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -43,7 +44,6 @@ const UserProfile = () => {
   const { isLoading } = useQuery({
     queryKey: ["userProfile"],
     queryFn: () => getUserProfile(accessToken),
-    staleTime: 300000,
   });
 
   const updateProfileMutation = useMutation({
@@ -146,38 +146,29 @@ const UserProfile = () => {
       <form onSubmit={handlePasswordUpdate} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="currentPassword">Current Password</Label>
-          <Input
-            id="currentPassword"
-            type="password"
-            value={passwordData.currentPassword}
-            onChange={(e) =>
+          <PasswordInput
+            credentials={{ email: '', password: passwordData.currentPassword }}
+            errors={{ password: passwordError }}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setPasswordData((prev) => ({
                 ...prev,
                 currentPassword: e.target.value,
               }))
             }
-            required
-            aria-required="true"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="newPassword">New Password</Label>
-          <Input
-            id="newPassword"
-            type="password"
-            value={passwordData.newPassword}
-            onChange={(e) => {
+          <PasswordInput
+            credentials={{ email: '', password: passwordData.newPassword }}
+            errors={{ password: passwordError }}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setPasswordData((prev) => ({
                 ...prev,
                 newPassword: e.target.value,
               }));
               setPasswordError("");
             }}
-            required
-            aria-required="true"
-            aria-invalid={!!passwordError}
-            aria-describedby="passwordError"
-            className={passwordError ? "border-red-500" : ""}
           />
           {passwordError && (
             <p

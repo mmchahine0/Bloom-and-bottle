@@ -7,6 +7,8 @@ import femalePerfume from "@/assets/FemalePerfume.png.jpg";
 import { HomepageData, ApiResponse } from "./Home.types";
 import { getHomepageData } from "./Home.services";
 import { useCart } from "@/features/cart/useCart";
+import { useToast } from '@/hooks/use-toast';
+import { Button } from "@/components/ui/button";
 
 // Skeleton data for error/loading states
 const skeletonData: HomepageData = {
@@ -66,64 +68,60 @@ const skeletonData: HomepageData = {
       _id: "skeleton-collection-1",
       title: "Summer Essentials",
       description: "Fresh and light fragrances perfect for warm weather.",
+      image: "https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Collection",
+      price: 199.99,
       products: [
         {
-          _id: "skeleton-product-1",
+          _id: "skeleton-perfume-1",
           name: "Ocean Breeze",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
+          brand: "Summer Scents",
+          image: "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Perfume",
+          sizes: [
+            { size: "50ml", price: 89.99 },
+            { size: "100ml", price: 149.99 }
+          ]
         },
         {
-          _id: "skeleton-product-2",
+          _id: "skeleton-perfume-2",
           name: "Citrus Fresh",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
-        },
-        {
-          _id: "skeleton-product-3",
-          name: "Light & Airy",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
-        },
-        {
-          _id: "skeleton-product-4",
-          name: "Tropical Blend",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
-        },
-      ],
+          brand: "Summer Scents",
+          image: "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Perfume",
+          sizes: [
+            { size: "50ml", price: 79.99 },
+            { size: "100ml", price: 129.99 }
+          ]
+        }
+      ]
     },
     {
       _id: "skeleton-collection-2",
       title: "Evening Elegance",
       description: "Sophisticated scents for special occasions.",
+      image: "https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Collection",
+      price: 299.99,
       products: [
         {
-          _id: "skeleton-product-5",
+          _id: "skeleton-perfume-3",
           name: "Midnight Rose",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
+          brand: "Evening Collection",
+          image: "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Perfume",
+          sizes: [
+            { size: "50ml", price: 129.99 },
+            { size: "100ml", price: 199.99 }
+          ]
         },
         {
-          _id: "skeleton-product-6",
+          _id: "skeleton-perfume-4",
           name: "Golden Hour",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
-        },
-        {
-          _id: "skeleton-product-7",
-          name: "Velvet Dreams",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
-        },
-        {
-          _id: "skeleton-product-8",
-          name: "Royal Mystery",
-          image:
-            "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Product",
-        },
-      ],
-    },
+          brand: "Evening Collection",
+          image: "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Perfume",
+          sizes: [
+            { size: "50ml", price: 139.99 },
+            { size: "100ml", price: 209.99 }
+          ]
+        }
+      ]
+    }
   ],
   feedbacks: [
     {
@@ -146,7 +144,7 @@ const skeletonData: HomepageData = {
 
 export default function HomePageContent() {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addCollectionToCart, isAuthenticated } = useCart();
   const { data, isLoading, error } = useQuery<ApiResponse<HomepageData>>({
     queryKey: ["homepage"],
     queryFn: getHomepageData,
@@ -154,14 +152,16 @@ export default function HomePageContent() {
 
   const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0);
   const [pauseFeedbackAutoSlide, setPauseFeedbackAutoSlide] = useState(false);
+  const { toast } = useToast();
 
   // Use skeleton data if there's an error or no data, otherwise use real data
   const displayData = error || !data ? skeletonData : data.data;
+
   useEffect(() => {
     if (!pauseFeedbackAutoSlide && displayData?.feedbacks?.length) {
       const interval = setInterval(() => {
         setCurrentFeedbackIndex(
-          (prevIndex) => (prevIndex + 1) % (displayData?.feedbacks?.length || 1)
+          (prevIndex) => (prevIndex + 1) % (displayData.feedbacks?.length || 1)
         );
       }, 5000);
 
@@ -170,7 +170,7 @@ export default function HomePageContent() {
   }, [pauseFeedbackAutoSlide, displayData]);
 
   const handleNextFeedback = () => {
-    if (!displayData) return;
+    if (!displayData?.feedbacks?.length) return;
     setCurrentFeedbackIndex(
       (prevIndex) => (prevIndex + 1) % displayData.feedbacks.length
     );
@@ -179,7 +179,7 @@ export default function HomePageContent() {
   };
 
   const handlePrevFeedback = () => {
-    if (!displayData) return;
+    if (!displayData?.feedbacks?.length) return;
     setCurrentFeedbackIndex(
       (prevIndex) =>
         (prevIndex - 1 + displayData.feedbacks.length) %
@@ -192,6 +192,79 @@ export default function HomePageContent() {
   const handleCheckItem = (itemId: string) => {
     if (!error) {
       navigate(`/product/${itemId}`);
+    }
+  };
+
+  // FIXED: Handle add to cart with proper collection price
+  const handleAddToCart = (collectionId: string) => {
+    const collection = displayData?.collections.find(c => c._id === collectionId);
+    if (!collection) {
+      toast({
+        title: 'Error',
+        description: 'Collection not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate collection price
+    const collectionPrice = collection.price || 0;
+    if (collectionPrice <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Invalid collection price',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      if (isAuthenticated) {
+        // For logged users - use the backend API structure
+        const collectionData = {
+          collectionId: collection._id,
+          quantity: 1,
+          items: collection.products.map(product => ({
+            productId: product._id,
+            size: "default", 
+            quantity: 1
+          })),
+          // Additional data for display purposes
+          collectionName: collection.title,
+          collectionDescription: collection.description,
+          collectionImage: collection.image,
+          price: collectionPrice,
+        };
+        
+        addCollectionToCart(collectionData);
+      } else {
+        // For guest users - pass the price and display information
+        const guestCollectionData = {
+          collectionId: collection._id,
+          quantity: 1,
+          items: collection.products.map(product => ({
+            productId: product._id,
+            size: "default",
+            quantity: 1
+          })),
+          // FIXED: Include the actual collection price and display data
+          collectionName: collection.title,
+          collectionDescription: collection.description,
+          collectionImage: collection.image,
+          price: collectionPrice, // This is the key fix - pass the actual price
+        };
+        
+        addCollectionToCart(guestCollectionData);
+      }
+
+      console.log(`Added collection "${collection.title}" to cart with price $${collectionPrice}`);
+    } catch (error) {
+      console.error('Error adding collection to cart:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add collection to cart. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -420,7 +493,7 @@ export default function HomePageContent() {
             Featured Items
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {displayData?.featuredItems?.map(
+            {displayData?.featuredItems && displayData.featuredItems.map(
               (item: {
                 _id: string;
                 name: string;
@@ -480,7 +553,7 @@ export default function HomePageContent() {
       </section>
 
       {/* Collections Section */}
-      {displayData?.collections?.length > 0 && (
+      {displayData?.collections && displayData.collections.length > 0 && (
         <section className="container mx-auto mb-16 px-4 bg-gray-50 py-8">
           <div className="mx-auto">
             <h2 className="text-3xl font-bold mb-8 text-center">Collections</h2>
@@ -494,8 +567,14 @@ export default function HomePageContent() {
                 >
                   <h3 className="text-xl font-bold mb-2">{collection.title}</h3>
                   <p className="text-gray-600 mb-4">{collection.description}</p>
+                  <div className="flex justify-between items-center mb-4">
+                    <p className="text-lg font-bold">
+                      ${(collection.price || 0).toFixed(2)}
+                      {error && <span className="text-sm text-gray-500 ml-2">(Demo Price)</span>}
+                    </p>
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {collection.products.map((product) => (
+                    {collection.products && collection.products.map((product) => (
                       <div
                         key={product._id}
                         className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow transition"
@@ -505,6 +584,10 @@ export default function HomePageContent() {
                             src={product.image}
                             alt={product.name}
                             className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Perfume";
+                            }}
                           />
                         </div>
                         <div className="p-2 text-center">
@@ -516,42 +599,17 @@ export default function HomePageContent() {
                     ))}
                   </div>
                   <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={() => {
-                        const collectionData = {
-                          productId: collection._id,
-                          name: collection.title,
-                          brand: "Collection",
-                          imageUrl: collection.products[0]?.image || "",
-                          size: "collection",
-                          quantity: 1,
-                          price: 0,
-                          originalPrice: 0,
-                          type: "collection" as const,
-                          collectionId: collection._id,
-                          collectionProducts: collection.products.map(p => ({
-                            productId: p._id,
-                            name: p.name,
-                            brand: "Collection",
-                            imageUrl: p.image,
-                            size: "collection",
-                            quantity: 1,
-                            price: 0,
-                            originalPrice: 0,
-                            type: "perfume" as const
-                          }))
-                        };
-                        addToCart(collectionData);
-                      }}
+                    <Button
+                      onClick={() => handleAddToCart(collection._id)}
+                      disabled={!!error}
                       className={`px-6 py-2 rounded-lg transition ${
                         error
                           ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                           : "bg-black text-white hover:bg-gray-800"
                       }`}
-                      disabled={!!error}
                     >
-                      Add Collection to Cart
-                    </button>
+                      {error ? "Demo Collection" : "Add Collection to Cart"}
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -561,7 +619,7 @@ export default function HomePageContent() {
       )}
 
       {/* Customer Feedback Section */}
-      {displayData?.feedbacks?.length > 0 && (
+      {displayData?.feedbacks && displayData.feedbacks.length > 0 && (
         <section className="py-12 px-4 bg-gray-50">
           <div className="container mx-auto">
             <h2 className="text-3xl font-bold mb-8 text-center">

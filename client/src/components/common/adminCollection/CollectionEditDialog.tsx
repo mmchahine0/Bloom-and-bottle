@@ -42,6 +42,7 @@ export const CollectionEditDialog: React.FC<CollectionEditDialogProps> = ({
     name: "",
     description: "",
     featured: false,
+    price: 0,
   })
   const [selectedPerfumes, setSelectedPerfumes] = useState<string[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -59,12 +60,13 @@ export const CollectionEditDialog: React.FC<CollectionEditDialogProps> = ({
         name: collection.name || "",
         description: collection.description || "",
         featured: collection.featured || false,
+        price: collection.price || 0,
       })
       setSelectedPerfumes(collection.perfumes?.map(p => p.id) || [])
       setImagePreview(collection.image || "")
     } else {
       // Reset form
-      setFormData({ name: "", description: "", featured: false })
+      setFormData({ name: "", description: "", featured: false, price: 0 })
       setSelectedPerfumes([])
       setImagePreview("")
     }
@@ -105,6 +107,7 @@ export const CollectionEditDialog: React.FC<CollectionEditDialogProps> = ({
       description: formData.description.trim(),
       perfumes: selectedPerfumes, 
       featured: formData.featured,
+      price: Number(formData.price),
     }
   
     if (imageFile) {
@@ -158,6 +161,20 @@ export const CollectionEditDialog: React.FC<CollectionEditDialogProps> = ({
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter collection name"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="collection-price">Collection Price *</Label>
+                  <Input
+                    id="collection-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    placeholder="Enter collection price"
                     required
                   />
                 </div>

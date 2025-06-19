@@ -1,26 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Trash2, ShoppingCart, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Minus, Trash2, ShoppingCart, MessageCircle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/common/loading spinner/LoadingSpinner.component';
+import { Link } from 'react-router-dom';
 import type { 
   LocalStorageCart, 
   CartItem, 
   LocalStorageOrder,
-  AddToCartData,
-  WhatsAppOrderMessage 
+  CollectionCartItem,
 } from './unloggedUsersCart.types';
-import { Link } from 'react-router-dom';
-
-const WHATSAPP_NUMBER = '+96176913342';
-const STORAGE_KEYS = {
-  GUEST_CART: 'guest_cart',
-  GUEST_ORDERS: 'guest_orders',
-  GUEST_SESSION: 'guest_session',
-} as const;
+import {
+  getCartFromLocalStorage,
+  updateItemQuantity,
+  updateCollectionQuantity,
+  removeItemFromCart,
+  removeCollectionFromCart,
+  clearCart,
+  calculateItemPrice,
+  generateOrderId,
+  generateWhatsAppURL,
+  saveOrderToLocalStorage,
+  updateAndSaveCart,
+} from './unloggedUsersCart.services';
 
 const UnloggedUsersCart: React.FC = () => {
   const { toast } = useToast();
@@ -28,173 +33,88 @@ const UnloggedUsersCart: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
+  // FIXED: Initialize cart with proper error handling and recalculation
+  const initializeCart = useCallback(() => {
+    try {
+      const savedCart = getCartFromLocalStorage();
+      
+      // FIXED: Force recalculation of totals in case of data inconsistency
+      const correctedCart = updateAndSaveCart(savedCart);
+      setCart(correctedCart);
+      
+      console.log('Cart initialized:', correctedCart);
+    } catch (error) {
+      console.error('Error initializing cart:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load cart data',
+        variant: 'destructive',
+      });
+      
+      // Create fallback cart
+      const fallbackCart = {
+        items: [],
+        collectionItems: [],
+        totalItems: 0,
+        totalPrice: 0,
+        discount: 0,
+        sessionId: `guest_${Date.now()}`,
+        lastUpdated: new Date(),
+      };
+      setCart(fallbackCart);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   // Initialize cart from localStorage
   useEffect(() => {
-    const initializeCart = () => {
-      try {
-        const savedCart = localStorage.getItem(STORAGE_KEYS.GUEST_CART);
-        if (savedCart) {
-          const parsedCart = JSON.parse(savedCart);
-          setCart(parsedCart);
-        } else {
-          // Create new empty cart
-          const newCart: LocalStorageCart = {
-            items: [],
-            totalItems: 0,
-            totalPrice: 0,
-            discount: 0,
-            sessionId: generateSessionId(),
-            lastUpdated: new Date(),
-          };
-          setCart(newCart);
-          saveCartToLocalStorage(newCart);
-        }
-      } catch (error) {
-        console.error('Error initializing cart:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load cart data',
-          variant: 'destructive',
-        });
-        // Create fallback cart
-        const fallbackCart: LocalStorageCart = {
-          items: [],
-          totalItems: 0,
-          totalPrice: 0,
-          discount: 0,
-          sessionId: generateSessionId(),
-          lastUpdated: new Date(),
-        };
-        setCart(fallbackCart);
-      } finally {
-        setIsLoading(false);
+    initializeCart();
+  }, [initializeCart]);
+
+  // FIXED: Listen for cart updates from other tabs/windows with better event handling
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'guest_cart') {
+        console.log('Storage change detected, refreshing cart...');
+        const updatedCart = getCartFromLocalStorage();
+        const correctedCart = updateAndSaveCart(updatedCart);
+        setCart(correctedCart);
       }
     };
 
-    initializeCart();
-  }, [toast]);
+    const handleCustomCartUpdate = (e?: CustomEvent) => {
+      console.log('Custom cart update event received:', e?.detail);
+      const updatedCart = getCartFromLocalStorage();
+      const correctedCart = updateAndSaveCart(updatedCart);
+      setCart(correctedCart);
+    };
 
-  // Generate unique session ID
-  const generateSessionId = (): string => {
-    return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('guestCartUpdated', handleCustomCartUpdate as EventListener);
+    window.addEventListener('refreshGuestCart', handleCustomCartUpdate as EventListener);
 
-  // Generate unique order ID
-  const generateOrderId = (): string => {
-    return `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('guestCartUpdated', handleCustomCartUpdate as EventListener);
+      window.removeEventListener('refreshGuestCart', handleCustomCartUpdate as EventListener);
+    };
+  }, []);
 
-  // Save cart to localStorage
-  const saveCartToLocalStorage = (cartData: LocalStorageCart) => {
-    try {
-      const cartToSave = {
-        ...cartData,
-        lastUpdated: new Date(),
-      };
-      localStorage.setItem(STORAGE_KEYS.GUEST_CART, JSON.stringify(cartToSave));
-    } catch (error) {
-      console.error('Error saving cart to localStorage:', error);
-      toast({
-        title: 'Warning',
-        description: 'Failed to save cart changes',
-        variant: 'destructive',
-      });
+  // FIXED: Update item quantity with better error handling
+  const handleUpdateItemQuantity = useCallback((itemId: string, newQuantity: number) => {
+    if (!cart || !itemId) {
+      console.error('Invalid cart or item ID');
+      return;
     }
-  };
-
-  // Calculate cart totals
-  const calculateCartTotals = (items: CartItem[]) => {
-    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = items.reduce((sum, item) => {
-      const itemPrice = item.discount && item.discount > 0 
-        ? item.originalPrice - (item.originalPrice * (item.discount / 100))
-        : item.price;
-      return sum + (itemPrice * item.quantity);
-    }, 0);
-    
-    return { totalItems, totalPrice };
-  };
-
-  // Add item to cart
-  const addToCartUnlogged = (productData: AddToCartData) => {
-    if (!cart) return;
 
     try {
-      const existingItemIndex = cart.items.findIndex(
-        item => item.productId === productData.productId && item.size === productData.size
-      );
-
-      let updatedItems: CartItem[];
-
-      if (existingItemIndex >= 0) {
-        // Update existing item
-        updatedItems = cart.items.map((item, index) => 
-          index === existingItemIndex 
-            ? { ...item, quantity: item.quantity + productData.quantity }
-            : item
-        );
-      } else {
-        // Add new item
-        const newItem: CartItem = {
-          id: `${productData.productId}_${productData.size}_${Date.now()}`,
-          ...productData,
-        };
-        updatedItems = [...cart.items, newItem];
-      }
-
-      const { totalItems, totalPrice } = calculateCartTotals(updatedItems);
-
-      const updatedCart: LocalStorageCart = {
-        ...cart,
-        items: updatedItems,
-        totalItems,
-        totalPrice,
-        lastUpdated: new Date(),
-      };
-
+      console.log(`Updating item ${itemId} quantity to ${newQuantity}`);
+      const updatedCart = updateItemQuantity(cart, itemId, newQuantity);
       setCart(updatedCart);
-      saveCartToLocalStorage(updatedCart);
-
-      toast({
-        title: 'Success',
-        description: 'Item added to cart successfully',
-      });
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add item to cart',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Update item quantity
-  const updateQuantity = (itemId: string, newQuantity: number) => {
-    if (!cart) return;
-
-    try {
-      if (newQuantity <= 0) {
-        removeItem(itemId);
-        return;
-      }
-
-      const updatedItems = cart.items.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      );
-
-      const { totalItems, totalPrice } = calculateCartTotals(updatedItems);
-
-      const updatedCart: LocalStorageCart = {
-        ...cart,
-        items: updatedItems,
-        totalItems,
-        totalPrice,
-        lastUpdated: new Date(),
-      };
-
-      setCart(updatedCart);
-      saveCartToLocalStorage(updatedCart);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: updatedCart }));
     } catch (error) {
       console.error('Error updating quantity:', error);
       toast({
@@ -203,26 +123,46 @@ const UnloggedUsersCart: React.FC = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [cart, toast]);
 
-  // Remove item from cart
-  const removeItem = (itemId: string) => {
-    if (!cart) return;
+  // FIXED: Update collection quantity with better error handling
+  const handleUpdateCollectionQuantity = useCallback((collectionId: string, newQuantity: number) => {
+    if (!cart || !collectionId) {
+      console.error('Invalid cart or collection ID');
+      return;
+    }
 
     try {
-      const updatedItems = cart.items.filter(item => item.id !== itemId);
-      const { totalItems, totalPrice } = calculateCartTotals(updatedItems);
-
-      const updatedCart: LocalStorageCart = {
-        ...cart,
-        items: updatedItems,
-        totalItems,
-        totalPrice,
-        lastUpdated: new Date(),
-      };
-
+      console.log(`Updating collection ${collectionId} quantity to ${newQuantity}`);
+      const updatedCart = updateCollectionQuantity(cart, collectionId, newQuantity);
       setCart(updatedCart);
-      saveCartToLocalStorage(updatedCart);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: updatedCart }));
+    } catch (error) {
+      console.error('Error updating collection quantity:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update collection quantity',
+        variant: 'destructive',
+      });
+    }
+  }, [cart, toast]);
+
+  // FIXED: Remove item from cart with better validation
+  const handleRemoveItem = useCallback((itemId: string) => {
+    if (!cart || !itemId) {
+      console.error('Invalid cart or item ID');
+      return;
+    }
+
+    try {
+      console.log(`Removing item ${itemId}`);
+      const updatedCart = removeItemFromCart(cart, itemId);
+      setCart(updatedCart);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: updatedCart }));
 
       toast({
         title: 'Success',
@@ -236,23 +176,46 @@ const UnloggedUsersCart: React.FC = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [cart, toast]);
 
-  // Clear entire cart
-  const clearCart = () => {
-    if (!cart) return;
+  // FIXED: Remove collection from cart with better validation
+  const handleRemoveCollection = useCallback((collectionId: string) => {
+    if (!cart || !collectionId) {
+      console.error('Invalid cart or collection ID');
+      return;
+    }
 
     try {
-      const clearedCart: LocalStorageCart = {
-        ...cart,
-        items: [],
-        totalItems: 0,
-        totalPrice: 0,
-        lastUpdated: new Date(),
-      };
+      console.log(`Removing collection ${collectionId}`);
+      const updatedCart = removeCollectionFromCart(cart, collectionId);
+      setCart(updatedCart);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: updatedCart }));
 
+      toast({
+        title: 'Success',
+        description: 'Collection removed from cart',
+      });
+    } catch (error) {
+      console.error('Error removing collection:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove collection',
+        variant: 'destructive',
+      });
+    }
+  }, [cart, toast]);
+
+  // FIXED: Clear entire cart with better error handling
+  const handleClearCart = useCallback(() => {
+    try {
+      console.log('Clearing entire cart');
+      const clearedCart = clearCart();
       setCart(clearedCart);
-      saveCartToLocalStorage(clearedCart);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: clearedCart }));
 
       toast({
         title: 'Success',
@@ -266,72 +229,23 @@ const UnloggedUsersCart: React.FC = () => {
         variant: 'destructive',
       });
     }
-  };
+  }, [toast]);
 
-  // Format WhatsApp message
-  const formatWhatsAppMessage = (orderData: LocalStorageOrder): string => {
-    const orderMessage: WhatsAppOrderMessage = {
-      orderId: orderData.orderId,
-      items: orderData.items.map(item => ({
-        name: item.name,
-        brand: item.brand,
-        size: item.size,
-        quantity: item.quantity,
-        price: item.discount && item.discount > 0 
-          ? item.originalPrice - (item.originalPrice * (item.discount / 100))
-          : item.price,
-      })),
-      totalPrice: orderData.totalPrice,
-      totalItems: orderData.totalItems,
-      timestamp: orderData.timestamp.toLocaleString(),
-    };
-
-    let message = `🛍️ *New Order* 🛍️\n\n`;
-    message += `📋 *Order ID:* ${orderMessage.orderId}\n`;
-    message += `📅 *Date:* ${orderMessage.timestamp}\n\n`;
-    message += `🎁 *Items Ordered:*\n`;
-    
-    orderMessage.items.forEach((item, index) => {
-      message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
-      message += `   Size: ${item.size}\n`;
-      message += `   Quantity: ${item.quantity}\n`;
-      message += `   Price: $${item.price.toFixed(2)} USD\n\n`;
-    });
-
-    message += `📊 *Order Summary:*\n`;
-    message += `Total Items: ${orderMessage.totalItems}\n`;
-    message += `*Total Price: $${orderMessage.totalPrice.toFixed(2)} USD*\n\n`;
-    message += `📞 Please confirm this order and provide delivery details.`;
-
-    return message;
-  };
-
-  // Save order to localStorage
-  const saveOrderToLocalStorage = (orderData: LocalStorageOrder) => {
-    try {
-      const existingOrders = localStorage.getItem(STORAGE_KEYS.GUEST_ORDERS);
-      const orders: LocalStorageOrder[] = existingOrders ? JSON.parse(existingOrders) : [];
-      orders.unshift(orderData); // Add to beginning of array
-      
-      // Keep only last 50 orders to prevent localStorage bloat
-      const limitedOrders = orders.slice(0, 50);
-      localStorage.setItem(STORAGE_KEYS.GUEST_ORDERS, JSON.stringify(limitedOrders));
-    } catch (error) {
-      console.error('Error saving order to localStorage:', error);
-      toast({
-        title: 'Warning',
-        description: 'Order placed but failed to save to history',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Handle checkout process
-  const handleCheckout = async () => {
-    if (!cart || cart.items.length === 0) {
+  // FIXED: Handle checkout process with better validation
+  const handleCheckout = useCallback(async () => {
+    if (!cart || (cart.items.length === 0 && cart.collectionItems.length === 0)) {
       toast({
         title: 'Error',
         description: 'Your cart is empty',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (cart.totalPrice <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Invalid cart total. Please refresh and try again.',
         variant: 'destructive',
       });
       return;
@@ -343,26 +257,29 @@ const UnloggedUsersCart: React.FC = () => {
       const orderId = generateOrderId();
       const orderData: LocalStorageOrder = {
         orderId,
-        items: cart.items,
+        items: cart.items || [],
+        collectionItems: cart.collectionItems || [],
         totalPrice: cart.totalPrice,
         totalItems: cart.totalItems,
         timestamp: new Date(),
         status: 'pending',
       };
 
+      console.log('Processing checkout with order:', orderData);
+
       // Save order to localStorage
-      saveOrderToLocalStorage(orderData);
+      const orderSaved = saveOrderToLocalStorage(orderData);
+      
+      if (!orderSaved) {
+        throw new Error('Failed to save order');
+      }
 
-      // Generate WhatsApp message
-      const whatsappMessage = formatWhatsAppMessage(orderData);
-      const encodedMessage = encodeURIComponent(whatsappMessage);
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\s+/g, '')}?text=${encodedMessage}`;
-
-      // Open WhatsApp
+      // Generate WhatsApp URL and open
+      const whatsappUrl = generateWhatsAppURL(orderData);
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 
       // Clear cart after successful order
-      clearCart();
+      handleClearCart();
 
       toast({
         title: 'Order Placed!',
@@ -379,15 +296,19 @@ const UnloggedUsersCart: React.FC = () => {
     } finally {
       setIsProcessingCheckout(false);
     }
-  };
+  }, [cart, toast, handleClearCart]);
 
-  // Get item display price (considering discount)
-  const getItemDisplayPrice = (item: CartItem): number => {
-    if (item.discount && item.discount > 0) {
-      return item.originalPrice - (item.originalPrice * (item.discount / 100));
-    }
-    return item.price;
-  };
+  // FIXED: Get item display price with better validation
+  const getItemDisplayPrice = useCallback((item: CartItem): number => {
+    if (!item) return 0;
+    return calculateItemPrice(item);
+  }, []);
+
+  // FIXED: Get collection display price with validation
+  const getCollectionDisplayPrice = useCallback((collection: CollectionCartItem): number => {
+    if (!collection) return 0;
+    return collection.totalPrice || 0;
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -401,7 +322,7 @@ const UnloggedUsersCart: React.FC = () => {
   }
 
   // Empty cart state
-  if (!cart || cart.items.length === 0) {
+  if (!cart || (cart.items.length === 0 && cart.collectionItems.length === 0)) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-2xl mx-auto">
@@ -410,12 +331,11 @@ const UnloggedUsersCart: React.FC = () => {
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">Your cart is empty</h2>
             <p className="text-gray-500 mb-6">Add some products to get started!</p>
             <Link to={"/home"}>
-            <Button 
-              onClick={() => window.history.back()}
-              className="bg-black text-white hover:bg-gray-800"
-            >
-              Continue Shopping
-            </Button>
+              <Button 
+                className="bg-black text-white hover:bg-gray-800"
+              >
+                Continue Shopping
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -437,79 +357,185 @@ const UnloggedUsersCart: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={clearCart}
+                  onClick={handleClearCart}
                   className="text-red-600 hover:text-red-800 hover:bg-red-50"
                 >
                   Clear All
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cart.items.map((item) => (
-                  <div key={item.id} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
-                    {/* Product Image */}
-                    <div className="w-full sm:w-24 h-48 sm:h-24 flex-shrink-0">
-                      <img
-                        src={item.imageUrl}
-                        alt={`${item.brand} ${item.name}`}
-                        className="w-full h-full object-cover rounded-md"
-                        onError={(e) => {
-                          e.currentTarget.src = '/placeholder-image.png';
-                        }}
-                      />
-                    </div>
+                {/* Individual Items */}
+                {cart.items.map((item) => {
+                  if (!item) return null;
+                  
+                  return (
+                    <div key={item.id} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
+                      {/* Product Image */}
+                      <div className="w-full sm:w-24 h-48 sm:h-24 flex-shrink-0">
+                        <img
+                          src={item.imageUrl}
+                          alt={`${item.brand} ${item.name}`}
+                          className="w-full h-full object-cover rounded-md"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-image.png';
+                          }}
+                        />
+                      </div>
 
-                    {/* Product Details */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{item.brand}</h3>
-                          <p className="text-gray-600">{item.name}</p>
-                          <Badge variant="outline" className="mt-1">
-                            {item.type} - {item.size}
-                          </Badge>
+                      {/* Product Details */}
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+                          <div>
+                            <h3 className="font-semibold text-lg">{item.brand}</h3>
+                            <p className="text-gray-600">{item.name}</p>
+                            <Badge variant="outline" className="mt-1">
+                              {item.type} - {item.size}
+                            </Badge>
+                          </div>
+                          
+                          {/* FIXED: Price display with proper validation */}
+                          <div className="text-right mt-2 sm:mt-0">
+                            {item.discount && item.discount > 0 ? (
+                              <div>
+                                <p className="text-lg font-semibold text-red-600">
+                                  ${getItemDisplayPrice(item).toFixed(2)}
+                                </p>
+                                <p className="text-sm text-gray-500 line-through">
+                                  ${(item.originalPrice || item.price || 0).toFixed(2)}
+                                </p>
+                                <Badge variant="destructive" className="text-xs">
+                                  {item.discount}% OFF
+                                </Badge>
+                              </div>
+                            ) : (
+                              <p className="text-lg font-semibold">
+                                ${(item.price || 0).toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center border rounded-md">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleUpdateItemQuantity(item.id, Math.max(1, (item.quantity || 1) - 1))}
+                              disabled={(item.quantity || 1) <= 1}
+                              className="px-3 py-1"
+                            >
+                              <Minus size={16} />
+                            </Button>
+                            <Input
+                              type="number"
+                              value={item.quantity || 1}
+                              onChange={(e) => {
+                                const newQuantity = parseInt(e.target.value) || 1;
+                                if (newQuantity > 0) {
+                                  handleUpdateItemQuantity(item.id, newQuantity);
+                                }
+                              }}
+                              className="w-16 text-center border-0 focus-visible:ring-0"
+                              min="1"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleUpdateItemQuantity(item.id, (item.quantity || 1) + 1)}
+                              className="px-3 py-1"
+                            >
+                              <Plus size={16} />
+                            </Button>
+                          </div>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+
+                        {/* FIXED: Item Total with proper calculation */}
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">
+                            Subtotal: ${(getItemDisplayPrice(item) * (item.quantity || 1)).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Collections */}
+                {cart.collectionItems.map((collection) => {
+                  if (!collection) return null;
+                  
+                  return (
+                    <div key={collection.id} className="flex flex-col gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <Package className="w-6 h-6 text-purple-600" />
+                          <div>
+                            <h3 className="font-semibold text-lg">{collection.collectionName || 'Collection'}</h3>
+                            {collection.collectionDescription && (
+                              <p className="text-sm text-gray-600 mt-1">{collection.collectionDescription}</p>
+                            )}
+                            <Badge variant="secondary" className="mt-1 bg-purple-100 text-purple-800">
+                              Collection Bundle
+                            </Badge>
+                          </div>
                         </div>
                         
-                        {/* Price */}
-                        <div className="text-right mt-2 sm:mt-0">
-                          {item.discount && item.discount > 0 ? (
-                            <div>
-                              <p className="text-lg font-semibold text-red-600">
-                                ${getItemDisplayPrice(item).toFixed(2)}
-                              </p>
-                              <p className="text-sm text-gray-500 line-through">
-                                ${item.originalPrice.toFixed(2)}
-                              </p>
-                              <Badge variant="destructive" className="text-xs">
-                                {item.discount}% OFF
-                              </Badge>
-                            </div>
-                          ) : (
-                            <p className="text-lg font-semibold">
-                              ${item.price.toFixed(2)}
+                        {/* FIXED: Collection Price display with validation */}
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-purple-700">
+                            ${getCollectionDisplayPrice(collection).toFixed(2)}
+                          </p>
+                          {getCollectionDisplayPrice(collection) <= 0 && (
+                            <p className="text-xs text-red-500">
+                              Price not set
                             </p>
                           )}
                         </div>
                       </div>
 
-                      {/* Quantity Controls */}
+                      {/* Collection Image */}
+                      {collection.collectionImage && (
+                        <div className="w-full h-48 rounded-md overflow-hidden">
+                          <img
+                            src={collection.collectionImage}
+                            alt={collection.collectionName || 'Collection'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-collection.png';
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Collection Quantity Controls */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center border rounded-md">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
+                            onClick={() => handleUpdateCollectionQuantity(collection.id, Math.max(1, (collection.quantity || 1) - 1))}
+                            disabled={(collection.quantity || 1) <= 1}
                             className="px-3 py-1"
                           >
                             <Minus size={16} />
                           </Button>
                           <Input
                             type="number"
-                            value={item.quantity}
+                            value={collection.quantity || 1}
                             onChange={(e) => {
                               const newQuantity = parseInt(e.target.value) || 1;
                               if (newQuantity > 0) {
-                                updateQuantity(item.id, newQuantity);
+                                handleUpdateCollectionQuantity(collection.id, newQuantity);
                               }
                             }}
                             className="w-16 text-center border-0 focus-visible:ring-0"
@@ -518,7 +544,7 @@ const UnloggedUsersCart: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => handleUpdateCollectionQuantity(collection.id, (collection.quantity || 1) + 1)}
                             className="px-3 py-1"
                           >
                             <Plus size={16} />
@@ -528,22 +554,22 @@ const UnloggedUsersCart: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => handleRemoveCollection(collection.id)}
                           className="text-red-600 hover:text-red-800 hover:bg-red-50"
                         >
                           <Trash2 size={16} />
                         </Button>
                       </div>
 
-                      {/* Item Total */}
-                      <div className="text-right">
+                      {/* FIXED: Collection Subtotal with proper calculation */}
+                      <div className="text-right pt-2 border-t">
                         <p className="text-sm text-gray-600">
-                          Subtotal: ${(getItemDisplayPrice(item) * item.quantity).toFixed(2)}
+                          Collection Subtotal: ${(getCollectionDisplayPrice(collection) * (collection.quantity || 1)).toFixed(2)}
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
@@ -558,8 +584,14 @@ const UnloggedUsersCart: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Items ({cart.totalItems})</span>
-                    <span>${cart.totalPrice.toFixed(2)}</span>
+                    <span>${(cart.totalPrice || 0).toFixed(2)}</span>
                   </div>
+                  {cart.discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount</span>
+                      <span>-${(cart.discount || 0).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
                     <span>Calculated at checkout</span>
@@ -567,13 +599,13 @@ const UnloggedUsersCart: React.FC = () => {
                   <hr />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>${cart.totalPrice.toFixed(2)} USD</span>
+                    <span>${(cart.totalPrice || 0).toFixed(2)} USD</span>
                   </div>
                 </div>
 
                 <Button
                   onClick={handleCheckout}
-                  disabled={isProcessingCheckout || cart.items.length === 0}
+                  disabled={isProcessingCheckout || (cart.items.length === 0 && cart.collectionItems.length === 0) || cart.totalPrice <= 0}
                   className="w-full bg-black text-white hover:bg-gray-800 h-12"
                 >
                   {isProcessingCheckout ? (
@@ -605,7 +637,11 @@ const UnloggedUsersCart: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Satisfaction Guaranteed</span>
+                    <span>Sign in to save your cart</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Order tracking available</span>
                   </div>
                 </div>
               </CardContent>
