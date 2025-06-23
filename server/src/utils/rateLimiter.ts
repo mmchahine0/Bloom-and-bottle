@@ -1,9 +1,9 @@
 import rateLimit from "express-rate-limit";
 
-// General API rate limiter - increased for active users
+// General API rate limiter - reasonable for normal API usage
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // Increased from 1000 to 2000 requests per windowMs
+  max: 500,
   message: {
     statusCode: 429,
     message: "Too many requests from this IP, please try again later",
@@ -13,10 +13,10 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Auth routes limiter - more reasonable limits
+// Auth routes limiter - strict for security
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Reduced from 1500 to 50 - this should be for failed attempts mainly
+  max: 5,
   message: {
     statusCode: 429,
     message: "Too many authentication attempts, please try again later",
@@ -24,14 +24,13 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip successful requests to avoid blocking legitimate users
-  skipSuccessfulRequests: true,
+  skipSuccessfulRequests: true, 
 });
 
-// More generous refresh token limiter for active users
+// Refresh token limiter - balanced for active users
 export const refreshTokenLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 100, // Increased from 15 to 100 - users might need many refreshes
+  max: 30, 
   message: {
     statusCode: 429,
     message: "Too many refresh token requests, please try again later",
@@ -41,9 +40,10 @@ export const refreshTokenLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Email verification limiter - strict to prevent spam
 export const emailVerificationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Reduced from 1000 to 20 - more reasonable for verification
+  windowMs: 60 * 60 * 1000, // Changed to 1 hour from 15 minutes
+  max: 3,
   message: {
     statusCode: 429,
     message: "Too many verification attempts, please try again later",
@@ -53,9 +53,10 @@ export const emailVerificationLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Password reset request limiter - very strict to prevent abuse
 export const passwordResetRequestLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Reduced from 1000 to 10 - reasonable for password resets
+  windowMs: 24 * 60 * 60 * 1000, // Changed to 24 hours from 1 hour
+  max: 3,
   message: {
     statusCode: 429,
     message: "Too many password reset requests, please try again later",
@@ -65,13 +66,13 @@ export const passwordResetRequestLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Password reset verification limiter - strict but slightly more lenient than request
 export const passwordResetVerificationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Reduced from 1000 to 10 - reasonable for reset verification
+  max: 5, 
   message: {
     statusCode: 429,
-    message:
-      "Too many password reset verification attempts, please try again later",
+    message: "Too many password reset verification attempts, please try again later",
     data: null,
   },
   standardHeaders: true,

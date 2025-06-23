@@ -3,6 +3,8 @@ import { Perfume } from "../../../database/model/perfumeModel";
 import { uploadToS3 } from "../../../utils/awsS3";
 import redisClient from "../../../utils/redis";
 
+const HOMEPAGE_CACHE_KEY = "homepage:data";
+
 // Utility: build dynamic filters
 const buildFilters = (query: any): any => {
   
@@ -57,6 +59,30 @@ const buildFilters = (query: any): any => {
   }
   
   return filters;
+};
+
+// Helper function to clear homepage cache if product is featured
+const clearHomepageCacheIfFeatured = async (featured: boolean) => {
+  if (featured) {
+    try {
+      await redisClient.del(HOMEPAGE_CACHE_KEY);
+    } catch (error) {
+      console.error('Error clearing homepage cache:', error);
+    }
+  }
+};
+
+// Helper function to check if product was or is featured
+const shouldClearHomepageCache = async (productId: string, newFeatured?: boolean) => {
+  try {
+    if (newFeatured) return true;
+    
+    const product = await Perfume.findById(productId).select('featured').lean();
+    return product?.featured || false;
+  } catch (error) {
+    console.error('Error checking product featured status:', error);
+    return false;
+  }
 };
 
 // GET /perfumes or /samples
@@ -205,6 +231,8 @@ export const createProduct = async (
 
     // Clear Redis cache after creating new product
     await redisClient.clearCache();
+    // Clear homepage cache if product is featured
+    await clearHomepageCacheIfFeatured(featured);
 
     res.status(201).json(savedPerfume);
   } catch (error) {
@@ -249,6 +277,9 @@ export const updateProduct = async (
   try {
     const productId = req.params.id;
     const updateData = { ...req.body, updatedAt: new Date() };
+
+    // Check if we need to clear homepage cache (if product was or will be featured)
+    const shouldClearCache = await shouldClearHomepageCache(productId, updateData.featured);
 
     // Parse sizes if they exist
     if (updateData.sizes) {
@@ -295,6 +326,10 @@ export const updateProduct = async (
 
     // Clear Redis cache after updating product
     await redisClient.clearCache();
+    // Clear homepage cache if needed
+    if (shouldClearCache) {
+      await redisClient.del(HOMEPAGE_CACHE_KEY);
+    }
 
     res.json(updated);
   } catch (err) {
@@ -312,6 +347,9 @@ export const deleteProduct = async (
   res: Response
 ): Promise<void> => {
   try {
+    // Check if product was featured before deleting
+    const shouldClearCache = await shouldClearHomepageCache(req.params.id);
+
     const deleted = await Perfume.findByIdAndDelete(req.params.id);
     if (!deleted) {
       res.status(404).json({ error: "Product not found" });
@@ -320,6 +358,10 @@ export const deleteProduct = async (
 
     // Clear Redis cache after deleting product
     await redisClient.clearCache();
+    // Clear homepage cache if needed
+    if (shouldClearCache) {
+      await redisClient.del(HOMEPAGE_CACHE_KEY);
+    }
 
     res.json({ message: "Product deleted successfully" });
   } catch (err) {

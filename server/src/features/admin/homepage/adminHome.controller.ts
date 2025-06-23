@@ -3,27 +3,39 @@ import { Collection } from "../../../database/model/collectionModel";
 import { Testimonial } from "../../../database/model/reviewsModel";
 import { Perfume } from "../../../database/model/perfumeModel";
 import { validationResult } from "express-validator";
+import redisClient from "../../../utils/redis";
+
+const HOMEPAGE_CACHE_KEY = "homepage:data";
+const HOMEPAGE_CACHE_EXPIRATION = 3600; // 1 hour
 
 // Get homepage data (featured products, collections, testimonials)
 export const getHomepageData = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Get featured perfumes
-    const featuredPerfumes = await Perfume.find({ featured: true })
-      .select('name brand price sizes imageUrl type')
-      .lean();
+    // Try to get data from Redis cache first
+    const cachedData = await redisClient.get(HOMEPAGE_CACHE_KEY);
+    if (cachedData) {
+      res.status(200).json({
+        success: true,
+        data: cachedData
+      });
+      return;
+    }
 
-    // Get featured collections with their perfumes
-    const collections = await Collection.find({ featured: true })
-      .populate({
-        path: 'perfumes',
-        select: 'name imageUrl'
-      })
-      .lean();
-
-    // Get featured testimonials
-    const testimonials = await Testimonial.find({ featured: true })
-      .select('imageUrl')
-      .lean();
+    // If no cached data, fetch from database
+    const [featuredPerfumes, collections, testimonials] = await Promise.all([
+      Perfume.find({ featured: true })
+        .select('name brand price sizes imageUrl type')
+        .lean(),
+      Collection.find({ featured: true })
+        .populate({
+          path: 'perfumes',
+          select: 'name imageUrl'
+        })
+        .lean(),
+      Testimonial.find({ featured: true })
+        .select('imageUrl')
+        .lean()
+    ]);
 
     // Transform data to match frontend expectations
     const featuredItems = featuredPerfumes.map(perfume => ({
@@ -56,13 +68,18 @@ export const getHomepageData = async (req: Request, res: Response): Promise<void
       screenshot: testimonial.imageUrl
     }));
 
+    const homepageData = {
+      featuredItems,
+      collections: collectionsData,
+      feedbacks
+    };
+
+    // Cache the transformed data
+    await redisClient.set(HOMEPAGE_CACHE_KEY, homepageData, HOMEPAGE_CACHE_EXPIRATION);
+
     res.status(200).json({
       success: true,
-      data: {
-        featuredItems,
-        collections: collectionsData,
-        feedbacks
-      }
+      data: homepageData
     });
   } catch (error) {
     console.error('Error fetching homepage data:', error);
@@ -70,6 +87,15 @@ export const getHomepageData = async (req: Request, res: Response): Promise<void
       success: false,
       message: 'Error fetching homepage data'
     });
+  }
+};
+
+// Helper function to clear homepage cache
+const clearHomepageCache = async () => {
+  try {
+    await redisClient.del(HOMEPAGE_CACHE_KEY);
+  } catch (error) {
+    console.error('Error clearing homepage cache:', error);
   }
 };
 
@@ -141,6 +167,7 @@ export const createCollection = async (req: Request, res: Response): Promise<voi
     });
 
     await collection.save();
+    await clearHomepageCache(); // Clear cache when new collection is created
 
     res.status(201).json({
       success: true,
@@ -189,6 +216,8 @@ export const updateCollection = async (req: Request, res: Response): Promise<voi
       });
     }
 
+    await clearHomepageCache(); // Clear cache when collection is updated
+
     res.status(200).json({
       success: true,
       message: 'Collection updated successfully',
@@ -215,6 +244,8 @@ export const deleteCollection = async (req: Request, res: Response): Promise<voi
         message: 'Collection not found'
       });
     }
+
+    await clearHomepageCache(); // Clear cache when collection is deleted
 
     res.status(200).json({
       success: true,
@@ -292,6 +323,7 @@ export const createTestimonial = async (req: Request, res: Response): Promise<vo
     });
 
     await testimonial.save();
+    await clearHomepageCache(); // Clear cache when new testimonial is created
 
     res.status(201).json({
       success: true,
@@ -337,6 +369,8 @@ export const updateTestimonial = async (req: Request, res: Response): Promise<vo
       });
     }
 
+    await clearHomepageCache(); // Clear cache when testimonial is updated
+
     res.status(200).json({
       success: true,
       message: 'Testimonial updated successfully',
@@ -363,6 +397,8 @@ export const deleteTestimonial = async (req: Request, res: Response): Promise<vo
         message: 'Testimonial not found'
       });
     }
+
+    await clearHomepageCache(); // Clear cache when testimonial is deleted
 
     res.status(200).json({
       success: true,
