@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import * as dotenv from "dotenv";
 import connectDB from "./database/mongoClient";
-import errorMiddleware from "../src/middleware/errorMiddleware";
+import errorMiddleware from "./middleware/errorMiddleware";
 import cookieParser from "cookie-parser";
 
 import authRoutes from "./features/auth/auth.route";
