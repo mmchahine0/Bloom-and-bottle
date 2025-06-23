@@ -20,20 +20,15 @@ dotenv.config();
 const app = express();
 
 const port = process.env.PORT || 3500;
-const allowedOrigins = ["http://localhost:5173", "http://localhost:3500"];
+// Read allowed origins from .env (comma-separated)
+const allowedOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 
 app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigin,
     credentials: true,
   })
 );
