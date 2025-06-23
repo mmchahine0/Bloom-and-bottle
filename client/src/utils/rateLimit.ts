@@ -92,13 +92,16 @@ export class RateLimiter {
   }
 }
 
+// Logical rate limits:
+// Sign in: 5 attempts per 15 minutes
+// Sign up: 3 attempts per 30 minutes
 const SIGNIN_RATE_LIMIT_CONFIG = {
-  maxAttempts: 1000,
+  maxAttempts: 5,
   windowMs: 15 * 60 * 1000,
 };
 
 const SIGNUP_RATE_LIMIT_CONFIG = {
-  maxAttempts: 1000,
+  maxAttempts: 3,
   windowMs: 30 * 60 * 1000,
 };
 

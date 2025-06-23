@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { getProductById } from './Product.services';
@@ -17,6 +17,7 @@ const ProductDetail: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const { addToCart } = useCart(); //handles if logged or unlogged
+  const navigate = useNavigate();
   
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', id],
@@ -78,6 +79,36 @@ const ProductDetail: React.FC = () => {
     };
 
     addToCart(cartItem);
+  };
+
+  const handleBuyItNow = () => {
+    if (!product || !selectedSize) {
+      toast({
+        title: 'Error',
+        description: 'Please select a size',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const selectedSizeObj = product.sizes.find(size => size.label === selectedSize);
+    if (!selectedSizeObj) return;
+
+    const cartItem = {
+      productId: product._id,
+      name: product.name,
+      brand: product.brand,
+      imageUrl: product.imageUrl,
+      size: selectedSize,
+      quantity: quantity,
+      price: selectedSizeObj.price,
+      originalPrice: selectedSizeObj.price,
+      discount: product.discount,
+      type: product.type,
+    };
+
+    addToCart(cartItem);
+    navigate('/cart');
   };
 
   if (isLoading) {
@@ -235,6 +266,7 @@ const ProductDetail: React.FC = () => {
               Add to cart
             </button>
             <button 
+              onClick={handleBuyItNow}
               className={`w-full py-3 px-6 rounded-full font-medium transition-colors ${
                 product.stock 
                   ? 'bg-black text-white hover:bg-gray-800' 

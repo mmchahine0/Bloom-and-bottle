@@ -9,6 +9,7 @@ import type {
     CollectionCartItem,
 } from './Cart.types';
 import { addToCartAPI, addCollectionToCartAPI } from './loggedUsers/loggedUsersCart.services';
+import { store } from '@/redux/persist/persist';
 
 // ==================== CONSTANTS ====================
 
@@ -25,24 +26,34 @@ export const CART_CONFIG = {
 
 // UPDATED: WhatsApp message formatter for new cart structure
 export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
-  const isLoggedUser = !!orderData.customerInfo?.userId;
   
-  let message = `🛍️ *New Order* 🛍️\n\n`;
-  message += `📋 *Order ID:* ${orderData.orderId}\n`;
+  const isLoggedUser = !!orderData.customerInfo?.userId;
+  // Get user info from Redux store
+  let username = '';
+  let email = '';
+  try {
+    const state = store.getState();
+    username = state.userdata?.username || '';
+    email = state.userdata?.email || '';
+  } catch {
+    // fallback to empty
+  }
+  let message = `*New Order*\n\n`;
+  message += `*Order ID:* ${orderData.orderId}\n`;
   
   if (isLoggedUser) {
-    message += `👤 *Customer:* ${orderData.customerInfo?.name || 'N/A'}\n`;
-    message += `📧 *Email:* ${orderData.customerInfo?.email || 'N/A'}\n`;
-    message += `🆔 *User ID:* ${orderData.customerInfo?.userId}\n`;
+    message += `*Customer:* ${username}\n`;
+    message += `*Email:* ${email}\n`;
+    message += `*User ID:* ${orderData.customerInfo?.userId}\n`;
   } else {
-    message += `👤 *Customer:* Guest User\n`;
+    message += `*Customer:* Guest User\n`;
   }
   
-  message += `📅 *Date:* ${orderData.timestamp.toLocaleString()}\n\n`;
+  message += `*Date:* ${orderData.timestamp.toLocaleString()}\n\n`;
   
   // Add individual items
   if (orderData.items && orderData.items.length > 0) {
-    message += `🎁 *Individual Items:*\n`;
+    message += `*Individual Items:*\n`;
     orderData.items.forEach((item, index) => {
       const itemPrice = calculateItemPrice(item);
       message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
@@ -51,22 +62,22 @@ export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
       message += `   Price: $${itemPrice.toFixed(2)} USD\n`;
       
       if (item.discount && item.discount > 0) {
-        message += `   💰 Discount: ${item.discount}% OFF\n`;
+        message += `   Discount: ${item.discount}% OFF\n`;
       }
       message += `\n`;
     });
   }
 
-  message += `📊 *Order Summary:*\n`;
+  message += `*Order Summary:*\n`;
   message += `Total Items: ${orderData.totalItems}\n`;
   message += `*Total Price: $${orderData.totalPrice.toFixed(2)} USD*\n\n`;
   
   if (isLoggedUser) {
-    message += `✅ *Order saved to account for tracking*\n`;
+    message += `*Order saved to account for tracking*\n`;
   }
   
-  message += `📞 Please confirm this order and provide delivery details.\n`;
-  message += `🚚 Free delivery all over Lebanon!`;
+  message += `Please confirm this order and provide delivery details.\n`;
+  message += `Free delivery all over Lebanon!`;
 
   return message;
 };

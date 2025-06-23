@@ -28,7 +28,6 @@ export const getCartFromAPI = async (accessToken: string): Promise<Cart> => {
       throw new Error('Invalid cart response from server');
     }
 
-    console.log('Raw API Response:', response);
     
     // Ensure collectionItems exists in response
     if (!response.data.collectionItems) {
@@ -36,7 +35,6 @@ export const getCartFromAPI = async (accessToken: string): Promise<Cart> => {
     }
     
     const transformedCart = transformCartAPIResponse(response);
-    console.log('Transformed Cart:', transformedCart);
 
     return transformedCart;
 
@@ -213,7 +211,6 @@ export const addCollectionToCartAPI = async (
       throw new Error(response.message || 'Failed to add collection to cart');
     }
 
-    console.log('Collection added to cart:', response);
 
   } catch (error) {
     console.error('Error adding collection to cart:', error);

@@ -42,7 +42,6 @@ const UnloggedUsersCart: React.FC = () => {
       const correctedCart = updateAndSaveCart(savedCart);
       setCart(correctedCart);
       
-      console.log('Cart initialized:', correctedCart);
     } catch (error) {
       console.error('Error initializing cart:', error);
       toast({
@@ -76,15 +75,13 @@ const UnloggedUsersCart: React.FC = () => {
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'guest_cart') {
-        console.log('Storage change detected, refreshing cart...');
         const updatedCart = getCartFromLocalStorage();
         const correctedCart = updateAndSaveCart(updatedCart);
         setCart(correctedCart);
       }
     };
 
-    const handleCustomCartUpdate = (e?: CustomEvent) => {
-      console.log('Custom cart update event received:', e?.detail);
+    const handleCustomCartUpdate = () => {
       const updatedCart = getCartFromLocalStorage();
       const correctedCart = updateAndSaveCart(updatedCart);
       setCart(correctedCart);
@@ -109,7 +106,6 @@ const UnloggedUsersCart: React.FC = () => {
     }
 
     try {
-      console.log(`Updating item ${itemId} quantity to ${newQuantity}`);
       const updatedCart = updateItemQuantity(cart, itemId, newQuantity);
       setCart(updatedCart);
       
@@ -133,7 +129,6 @@ const UnloggedUsersCart: React.FC = () => {
     }
 
     try {
-      console.log(`Updating collection ${collectionId} quantity to ${newQuantity}`);
       const updatedCart = updateCollectionQuantity(cart, collectionId, newQuantity);
       setCart(updatedCart);
       
@@ -157,7 +152,6 @@ const UnloggedUsersCart: React.FC = () => {
     }
 
     try {
-      console.log(`Removing item ${itemId}`);
       const updatedCart = removeItemFromCart(cart, itemId);
       setCart(updatedCart);
       
@@ -186,7 +180,6 @@ const UnloggedUsersCart: React.FC = () => {
     }
 
     try {
-      console.log(`Removing collection ${collectionId}`);
       const updatedCart = removeCollectionFromCart(cart, collectionId);
       setCart(updatedCart);
       
@@ -210,7 +203,6 @@ const UnloggedUsersCart: React.FC = () => {
   // FIXED: Clear entire cart with better error handling
   const handleClearCart = useCallback(() => {
     try {
-      console.log('Clearing entire cart');
       const clearedCart = clearCart();
       setCart(clearedCart);
       
@@ -265,7 +257,6 @@ const UnloggedUsersCart: React.FC = () => {
         status: 'pending',
       };
 
-      console.log('Processing checkout with order:', orderData);
 
       // Save order to localStorage
       const orderSaved = saveOrderToLocalStorage(orderData);

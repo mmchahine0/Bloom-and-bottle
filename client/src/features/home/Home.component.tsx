@@ -257,7 +257,6 @@ export default function HomePageContent() {
         addCollectionToCart(guestCollectionData);
       }
 
-      console.log(`Added collection "${collection.title}" to cart with price $${collectionPrice}`);
     } catch (error) {
       console.error('Error adding collection to cart:', error);
       toast({

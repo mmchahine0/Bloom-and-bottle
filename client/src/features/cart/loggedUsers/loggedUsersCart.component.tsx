@@ -31,6 +31,8 @@ const LoggedUsersCart: React.FC = () => {
   const { toast } = useToast();
   const accessToken = useSelector((state: RootState) => state.auth?.accessToken);
   const userId = useSelector((state: RootState) => state.auth?.id);
+  const username = useSelector((state: RootState) => state.userdata?.username);
+  const email = useSelector((state: RootState) => state.userdata?.email);
   
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
@@ -46,7 +48,6 @@ const LoggedUsersCart: React.FC = () => {
     enabled: !!accessToken && !!userId,
   });
 
-  console.log('Cart Data:', cart);
 
   // Increment quantity mutation
   const incrementQuantityMutation = useMutation({
@@ -223,16 +224,16 @@ const LoggedUsersCart: React.FC = () => {
 
   // UPDATED: Format WhatsApp message for simplified collections
   const formatWhatsAppMessage = (orderData: LoggedUserWhatsAppOrder): string => {
-    let message = `🛍️ *New Order* 🛍️\n\n`;
-    message += `📋 *Order ID:* ${orderData.orderId}\n`;
-    message += `👤 *Customer:* ${orderData.customerInfo.name || 'N/A'}\n`;
-    message += `📧 *Email:* ${orderData.customerInfo.email || 'N/A'}\n`;
-    message += `🆔 *User ID:* ${orderData.customerInfo.userId}\n`;
-    message += `📅 *Date:* ${orderData.timestamp}\n\n`;
+    let message = `*New Order*\n\n`;
+    message += `*Order ID:* ${orderData.orderId}\n`;
+    message += `*Customer:* ${username || 'N/A'}\n`;
+    message += `*Email:* ${email || 'N/A'}\n`;
+    message += `*User ID:* ${orderData.customerInfo.userId}\n`;
+    message += `*Date:* ${orderData.timestamp}\n\n`;
     
     // Add individual items
     if (orderData.items.length > 0) {
-      message += `🎁 *Individual Items:*\n`;
+      message += `*Individual Items:*\n`;
       orderData.items.forEach((item, index) => {
         message += `${index + 1}. *${item.brand} - ${item.name}*\n`;
         message += `   Size: ${item.size}\n`;
@@ -243,7 +244,7 @@ const LoggedUsersCart: React.FC = () => {
 
     // Add collections (simplified)
     if (orderData.collections && orderData.collections.length > 0) {
-      message += `📦 *Collections:*\n`;
+      message += `*Collections:*\n`;
       orderData.collections.forEach((collection: WhatsAppCollectionItem, index: number) => {
         message += `${index + 1}. *${collection.name}*\n`;
         if (collection.description) {
@@ -254,10 +255,10 @@ const LoggedUsersCart: React.FC = () => {
       });
     }
 
-    message += `📊 *Order Summary:*\n`;
+    message += `*Order Summary:*\n`;
     message += `Total Items: ${orderData.totalItems}\n`;
     message += `*Total Price: ${orderData.totalPrice.toFixed(2)} USD*\n\n`;
-    message += `📞 Please confirm this order and provide delivery details.`;
+    message += `Please confirm this order and provide delivery details.`;
 
     return message;
   };

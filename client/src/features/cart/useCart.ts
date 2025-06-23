@@ -253,7 +253,6 @@ export const useCart = () => {
         throw new Error('Failed to save cart to localStorage');
       }
       
-      console.log('Item added to guest cart:', cart);
       
       // FIXED: Dispatch custom event to notify cart component
       window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: cart }));
@@ -303,7 +302,6 @@ export const useCart = () => {
         return;
       }
 
-      console.log('Adding collection to guest cart with data:', collectionData);
 
       let cart = getGuestCart();
   
@@ -315,7 +313,6 @@ export const useCart = () => {
         // Update existing collection quantity
         cart.collectionItems[existingCollectionIndex].quantity = 
           (cart.collectionItems[existingCollectionIndex].quantity || 0) + (collectionData.quantity || 1);
-        console.log('Updated existing collection quantity:', cart.collectionItems[existingCollectionIndex]);
       } else {
         // Add new collection item to cart with proper validation
         const newCollection: GuestCollectionCartItem = {
@@ -330,18 +327,13 @@ export const useCart = () => {
           discount: 0, // Collections don't have discounts
         };
         
-        console.log('Creating new collection item:', newCollection);
         cart.collectionItems.push(newCollection);
       }
   
       // Recalculate totals
       cart = calculateGuestCartTotals(cart);
       
-      console.log('Cart after adding collection:', {
-        totalItems: cart.totalItems,
-        totalPrice: cart.totalPrice,
-        collectionItems: cart.collectionItems.length
-      });
+      
       
       // Save to localStorage
       const saved = saveGuestCart(cart);
@@ -349,7 +341,6 @@ export const useCart = () => {
         throw new Error('Failed to save cart to localStorage');
       }
       
-      console.log('Collection added to guest cart successfully');
       
       // FIXED: Dispatch custom event to notify cart component
       window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: cart }));

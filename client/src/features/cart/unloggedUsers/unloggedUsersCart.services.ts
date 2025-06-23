@@ -314,19 +314,12 @@ export const addCollectionToCart = (cart: LocalStorageCart, collection: AddColle
         collectionDescription: collection.collectionDescription,
         collectionImage: collection.collectionImage,
         quantity: collection.quantity || 1,
-        totalPrice: collection.price || 0, // FIXED: Use price from collection data
-        originalTotalPrice: collection.price || 0, // No discounts for collections
-        discount: 0, // Collections don't have discounts
+        totalPrice: collection.price || 0, 
+        originalTotalPrice: collection.price || 0, 
+        discount: 0,
       };
       
-      // FIXED: Debug log to help troubleshoot
-      console.log('Adding new collection to cart:', {
-        id: newCollection.id,
-        collectionId: newCollection.collectionId,
-        name: newCollection.collectionName,
-        price: newCollection.totalPrice,
-        quantity: newCollection.quantity
-      });
+      
       
       updatedCollectionItems = [...collectionItems, newCollection];
     }
@@ -466,15 +459,15 @@ export const formatWhatsAppMessage = (order: LocalStorageOrder): string => {
   }
   
   try {
-    let message = `🛍️ *New Order* 🛍️\n\n`;
-    message += `📋 *Order ID:* ${order.orderId || 'N/A'}\n`;
-    message += `👤 *Customer:* Guest User\n`;
-    message += `📅 *Date:* ${order.timestamp ? order.timestamp.toLocaleString() : new Date().toLocaleString()}\n\n`;
+    let message = `*New Order*\n\n`;
+    message += `*Order ID:* ${order.orderId || 'N/A'}\n`;
+    message += `*Customer:* Guest User\n`;
+    message += `*Date:* ${order.timestamp ? order.timestamp.toLocaleString() : new Date().toLocaleString()}\n\n`;
     
     // Add individual items
     const items = order.items || [];
     if (items.length > 0) {
-      message += `🎁 *Individual Items:*\n`;
+      message += `*Individual Items:*\n`;
       items.forEach((item, index) => {
         if (!item) return;
         const itemPrice = calculateItemPrice(item);
@@ -484,7 +477,7 @@ export const formatWhatsAppMessage = (order: LocalStorageOrder): string => {
         message += `   Price: $${itemPrice.toFixed(2)} USD\n`;
         
         if (item.discount && item.discount > 0) {
-          message += `   💰 Discount: ${item.discount}% OFF\n`;
+          message += `   Discount: ${item.discount}% OFF\n`;
         }
         message += `\n`;
       });
@@ -493,7 +486,7 @@ export const formatWhatsAppMessage = (order: LocalStorageOrder): string => {
     // Add collections
     const collectionItems = order.collectionItems || [];
     if (collectionItems.length > 0) {
-      message += `📦 *Collections:*\n`;
+      message += `*Collections:*\n`;
       collectionItems.forEach((collection, index) => {
         if (!collection) return;
         message += `${index + 1}. *${collection.collectionName || 'Collection'}*\n`;
@@ -505,11 +498,11 @@ export const formatWhatsAppMessage = (order: LocalStorageOrder): string => {
       });
     }
   
-    message += `📊 *Order Summary:*\n`;
+    message += `*Order Summary:*\n`;
     message += `Total Items: ${order.totalItems || 0}\n`;
     message += `*Total Price: $${(order.totalPrice || 0).toFixed(2)} USD*\n\n`;
-    message += `📞 Please confirm this order and provide delivery details.\n`;
-    message += `🚚 Free delivery all over Lebanon!`;
+    message += `Please confirm this order and provide delivery details.\n`;
+    message += `Free delivery all over Lebanon!`;
   
     return message;
   } catch (error) {
