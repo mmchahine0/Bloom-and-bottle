@@ -10,6 +10,8 @@ import {
   getProductOriginalPrice,
 } from "../cart/cart.utils";
 
+const DELIVERY_FEE = 3;
+
 // GET /orders - Get all orders for a user (OPTIMIZED - Simple Approach)
 export const getUserOrders = async (
   req: Request,
@@ -227,6 +229,9 @@ export const placeOrder = async (
     });
 
     orderTotalDiscount = orderOriginalTotalPrice - orderTotalPrice;
+
+    // Add delivery fee
+    orderTotalPrice += DELIVERY_FEE;
 
     // Create order matching your schema structure
     const newOrder = new Order({

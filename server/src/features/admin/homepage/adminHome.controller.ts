@@ -56,6 +56,7 @@ export const getHomepageData = async (req: Request, res: Response): Promise<void
       title: collection.name,
       description: collection.description || '',
       price: collection.price || 0,
+      image: collection.image || '',
       products: collection.perfumes.map((perfume: any) => ({
         _id: perfume._id.toString(),
         name: perfume.name,

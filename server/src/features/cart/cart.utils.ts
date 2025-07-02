@@ -8,6 +8,8 @@ import {
   OrderItem
 } from './cart.types';
 
+const DELIVERY_FEE = 3;
+
 /**
  * Get the price for a product based on size
  */
@@ -98,7 +100,7 @@ export const calculateCartSummary = (
 
   return {
     totalItems: productTotals.totalItems + collectionTotals.totalItems,
-    totalPrice: productTotals.totalPrice + collectionTotals.totalPrice,
+    totalPrice: productTotals.totalPrice + collectionTotals.totalPrice + DELIVERY_FEE,
     totalDiscount: productTotals.totalDiscount,
     subtotalProducts: productTotals.totalPrice,
     subtotalCollections: collectionTotals.totalPrice
