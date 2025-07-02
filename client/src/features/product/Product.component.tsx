@@ -207,7 +207,7 @@ const ProductDetail: React.FC = () => {
                     onClick={() => setSelectedSize(size.label)}
                     className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
                       selectedSize === size.label
-                        ? 'bg-black text-white border-black'
+                        ? 'bg-[#2c2c2c] text-white border-[#2c2c2c]'
                         : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
                     }`}
                   >
@@ -257,7 +257,7 @@ const ProductDetail: React.FC = () => {
               onClick={handleAddToCart}
               className={`w-full py-3 px-6 rounded-full font-medium transition-colors ${
                 product.stock 
-                  ? 'bg-white border-2 border-black text-black hover:bg-gray-50' 
+                  ? 'bg-white border-2 border-[#2c2c2c] text-[#2c2c2c] hover:bg-gray-50' 
                   : 'bg-gray-100 border-2 border-gray-200 text-gray-400 cursor-not-allowed'
               }`}
               disabled={!product.stock}
@@ -269,7 +269,7 @@ const ProductDetail: React.FC = () => {
               onClick={handleBuyItNow}
               className={`w-full py-3 px-6 rounded-full font-medium transition-colors ${
                 product.stock 
-                  ? 'bg-black text-white hover:bg-gray-800' 
+                  ? 'bg-[#2c2c2c] text-white hover:bg-gray-800' 
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
               disabled={!product.stock}

@@ -59,6 +59,7 @@ export interface Cart {
   collectionItems: CollectionCartItem[];
   totalItems: number;
   totalPrice: number;
+  originalTotalPrice?: number;
   discount: number; // Only from individual products
 }
 

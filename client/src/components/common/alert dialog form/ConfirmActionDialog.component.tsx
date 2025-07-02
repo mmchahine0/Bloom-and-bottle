@@ -42,7 +42,7 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
           <AlertDialogDescription>
             {description}{" "}
             {itemDetails && (
-              <span className="font-medium text-black">
+              <span className="font-medium text-[#2c2c2c]">
                 {itemDetails.action} {itemDetails.name}
               </span>
             )}

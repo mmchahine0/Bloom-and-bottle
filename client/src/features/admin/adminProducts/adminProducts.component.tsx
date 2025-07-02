@@ -420,7 +420,7 @@ const ProductsDashboard = () => {
       case "men":
         return "bg-blue-100 text-blue-800";
       case "women":
-        return "bg-pink-100 text-pink-800";
+        return "bg-pink-300 text-[#2c2c2c]";
       case "un":
         return "bg-purple-100 text-purple-800";
       default:

@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
 } as const;
 
 const WHATSAPP_NUMBER = '+96176913342';
+const DELIVERY_FEE = 3;
 
 // Generate unique IDs
 export const generateSessionId = (): string => {
@@ -129,7 +130,7 @@ export const calculateCartTotals = (cart: LocalStorageCart): CartSummary => {
 
   return {
     totalItems: itemsTotalItems + collectionsTotalItems,
-    totalPrice: itemsSubtotal + collectionsSubtotal,
+    totalPrice: itemsSubtotal + collectionsSubtotal + DELIVERY_FEE,
     totalDiscount: itemsDiscount, // Only from products
     subtotalProducts: itemsSubtotal,
     subtotalCollections: collectionsSubtotal,
@@ -501,8 +502,8 @@ export const formatWhatsAppMessage = (order: LocalStorageOrder): string => {
     message += `*Order Summary:*\n`;
     message += `Total Items: ${order.totalItems || 0}\n`;
     message += `*Total Price: $${(order.totalPrice || 0).toFixed(2)} USD*\n\n`;
+    message += `Delivery fee: $${DELIVERY_FEE} all over Lebanon!\n`;
     message += `Please confirm this order and provide delivery details.\n`;
-    message += `Free delivery all over Lebanon!`;
   
     return message;
   } catch (error) {

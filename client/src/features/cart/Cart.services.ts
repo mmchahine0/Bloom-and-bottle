@@ -13,6 +13,8 @@ import { store } from '@/redux/persist/persist';
 
 // ==================== CONSTANTS ====================
 
+const DELIVERY_FEE = 3;
+
 export const CART_CONFIG = {
   MAX_ITEMS: 50,
   MAX_QUANTITY_PER_ITEM: 10,
@@ -77,7 +79,7 @@ export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
   }
   
   message += `Please confirm this order and provide delivery details.\n`;
-  message += `Free delivery all over Lebanon!`;
+  message += `Delivery fee: $${DELIVERY_FEE} all over Lebanon!`;
 
   return message;
 };
@@ -136,7 +138,7 @@ export const calculateCartTotals = (
 
   return { 
     totalItems: itemsTotalItems + collectionsTotalItems, 
-    totalPrice: itemsPrice + collectionsTotalPrice, 
+    totalPrice: itemsPrice + collectionsTotalPrice + DELIVERY_FEE, 
     totalDiscount: itemsDiscount // Only from individual items
   };
 };
@@ -465,3 +467,4 @@ export const updateCollectionQuantityInGuestCart = (
 
   return calculateGuestCartTotals(cart);
 };
+

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import heroImage from "@/assets/background.png.jpg";
-import menPerfume from "@/assets/ManPerfume.png.jpg";
-import femalePerfume from "@/assets/FemalePerfume.png.jpg";
+import heroImage from "@/assets/background.jpg";
+import menPerfume from "@/assets/ManPerfume.jpg";
+import femalePerfume from "@/assets/FemalePerfume.jpg";
+import collectionsBackground from "@/assets/collections.jpg"
 import { HomepageData, ApiResponse } from "./Home.types";
 import { getHomepageData } from "./Home.services";
 import { useCart } from "@/features/cart/useCart";
@@ -332,13 +333,14 @@ export default function HomePageContent() {
           src={heroImage}
           alt="Hero background"
           className="absolute inset-0 h-full w-full object-cover -z-10"
+          loading="lazy"
         />
         {/* Overlay for better text visibility */}
-        <div className="absolute inset-0 bg-black/30 -z-10"></div>
+        <div className="absolute inset-0 bg-[#2c2c2c]/20 -z-10"></div>
 
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 tracking-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl mb-4 tracking-tight font-semibold">
             You Need To Smell Good
           </h1>
           <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto">
@@ -346,14 +348,17 @@ export default function HomePageContent() {
           </p>
           <Link
             to="/samples"
-            className="inline-block bg-white text-black px-8 py-4 rounded-full font-semibold text-lg hover:bg-opacity-90 transition duration-300 transform hover:scale-105"
+            className="inline-block bg-white text-[#2c2c2c] px-8 py-4 font-semibold text-lg hover:bg-opacity-90 transition duration-300 transform hover:scale-105"
           >
             Browse Samples
           </Link>
         </div>
 
         {/* Scroll Down Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer" onClick={() => {
+          const el = document.getElementById('main');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}>
           <svg
             className="w-8 h-8 text-white"
             fill="none"
@@ -372,123 +377,76 @@ export default function HomePageContent() {
       </section>
 
       {/* For Him / For Her Sections */}
-      <section className="w-full py-16 px-4 sm:px-6 lg:px-8 bg-gray-100">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16">
-            Our Collections
-          </h2>
+      <section id="main" className="w-full py-4 px-4 sm:px-6 lg:px-8 bg-gray-100 ">
+  <div className="max-w-5xl mx-auto">
+    <h2 className="text-4xl font-stretch-50% text-[#2c2c2c] text-center mb-6 border-x-4 border-[#2c2c2c]">
+      Our Perfumes
+    </h2>
 
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* For Him Section */}
-            <div className="flex-1">
-              <div className="bg-black rounded-lg overflow-hidden shadow-xl">
-                <div className="relative aspect-[4/5] overflow-hidden">
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                    <h3
-                      className="text-white text-4xl md:text-5xl font-bold text-center drop-shadow-lg"
-                      style={{
-                        fontFamily: "serif",
-                        textShadow: "0 2px 4px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      For him
-                    </h3>
-                  </div>
-                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-5 gap-2 p-6">
-                    {/* Display perfume bottles in a grid */}
-                    <img
-                      src={menPerfume}
-                      alt="Hero background"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="p-4 bg-black text-white">
-                  <Link
-                    to="/perfumes/men"
-                    className="flex items-center justify-between group"
-                  >
-                    <span className="text-xl font-semibold">
-                      Men Fragrances
-                    </span>
-                    <svg
-                      className="w-6 h-6 transform group-hover:translate-x-2 transition-transform"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      ></path>
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* For Her Section */}
-            <div className="flex-1">
-              <div className="bg-black rounded-lg overflow-hidden shadow-xl">
-                <div className="relative aspect-[4/5] overflow-hidden">
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                    <h3
-                      className="text-white text-4xl md:text-5xl font-bold text-center drop-shadow-lg"
-                      style={{
-                        fontFamily: "serif",
-                        color: "#ffb6c1",
-                        textShadow: "0 2px 4px rgba(0,0,0,0.5)",
-                      }}
-                    >
-                      For her
-                    </h3>
-                  </div>
-                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-5 gap-2 p-6">
-                    {/* Display perfume bottles in a grid */}
-                    <img
-                      src={femalePerfume}
-                      alt="Hero background"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="p-4 bg-black text-white">
-                  <Link
-                    to="/perfumes/women"
-                    className="flex items-center justify-between group"
-                  >
-                    <span className="text-xl font-semibold">
-                      Women Fragrances
-                    </span>
-                    <svg
-                      className="w-6 h-6 transform group-hover:translate-x-2 transition-transform"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      ></path>
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
+    <div className="grid grid-cols-2 gap-8">
+      <Link to="/perfumes/men" className="group block">
+        <div className="bg-[#2c2c2c] rounded-lg overflow-hidden shadow-xl relative aspect-[3/4] sm:aspect-[4/5] flex flex-col justify-end cursor-pointer max-h-[690px] min-h-[180px] sm:min-h-0">
+          <img
+            src={menPerfume}
+            alt="Men Fragrance"
+            className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+          <div className="relative z-10 p-4 bg-[#2c2c2c] bg-opacity-70 text-white flex items-center justify-between">
+            <span className="text-xl font-semibold">Men Fragrances</span>
+            <svg
+              className="w-6 h-6 transform group-hover:translate-x-2 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              ></path>
+            </svg>
           </div>
         </div>
-      </section>
+      </Link>
+
+      <Link to="/perfumes/women" className="group block">
+        <div className="bg-[#2c2c2c] rounded-lg overflow-hidden shadow-xl relative aspect-[3/4] sm:aspect-[4/5] flex flex-col justify-end cursor-pointer max-h-[690px] min-h-[180px] sm:min-h-0">
+          <img
+            src={femalePerfume}
+            alt="Women Fragrance"
+            className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+          <div className="relative z-10 p-4 bg-[#2c2c2c] bg-opacity-70 text-white flex items-center justify-between">
+            <span className="text-xl font-semibold">Women Fragrances</span>
+            <svg
+              className="w-6 h-6 transform group-hover:translate-x-2 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              ></path>
+            </svg>
+          </div>
+        </div>
+      </Link>
+    </div>
+  </div>
+</section>
 
       {/* Featured Items Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-8 px-4 sm:px-6 lg:px-8 border-y-2 border-[#2c2c2c]">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold mb-10 text-center">
+          <h2 className="text-3xl font-stretch-100% text-[#2c2c2c] mb-10 text-center">
             Featured Items
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -514,6 +472,7 @@ export default function HomePageContent() {
                         src={item.image}
                         alt={item.name}
                         className="w-full max-h-60 object-contain"
+                        loading="lazy"
                       />
                     </div>
                     <div>
@@ -535,7 +494,7 @@ export default function HomePageContent() {
                         className={`mt-4 w-full py-2 rounded-lg transition ${
                           error
                             ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                            : "bg-black text-white hover:bg-gray-800"
+                            : "bg-[#2c2c2c] text-white hover:bg-gray-800 cursor-pointer"
                         }`}
                         disabled={!!error}
                         onClick={() => handleCheckItem(item._id)}
@@ -553,75 +512,82 @@ export default function HomePageContent() {
 
       {/* Collections Section */}
       {displayData?.collections && displayData.collections.length > 0 && (
-        <section className="container mx-auto mb-16 px-4 bg-gray-50 py-8">
-          <div className="mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Collections</h2>
-            <div className="space-y-12">
-              {displayData.collections.map((collection) => (
-                <div
-                  key={collection._id}
-                  className={`bg-white p-4 md:p-6 rounded-xl shadow-sm ${
-                    error ? "opacity-75" : ""
-                  }`}
-                >
-                  <h3 className="text-xl font-bold mb-2">{collection.title}</h3>
-                  <p className="text-gray-600 mb-4">{collection.description}</p>
-                  <div className="flex justify-between items-center mb-4">
-                    <p className="text-lg font-bold">
-                      ${(collection.price || 0).toFixed(2)}
-                      {error && <span className="text-sm text-gray-500 ml-2">(Demo Price)</span>}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {collection.products && collection.products.map((product) => (
-                      <div
-                        key={product._id}
-                        className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow transition"
-                      >
-                        <div className="aspect-square bg-gray-50 flex items-center justify-center p-2">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="max-h-full max-w-full object-contain"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = "https://via.placeholder.com/200x200/f3f4f6/9ca3af?text=Perfume";
-                            }}
-                          />
-                        </div>
-                        <div className="p-2 text-center">
-                          <p className="text-sm font-medium truncate">
-                            {product.name}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex justify-center">
-                    <Button
-                      onClick={() => handleAddToCart(collection._id)}
-                      disabled={!!error}
-                      className={`px-6 py-2 rounded-lg transition ${
-                        error
-                          ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                          : "bg-black text-white hover:bg-gray-800"
-                      }`}
-                    >
-                      {error ? "Demo Collection" : "Add Collection to Cart"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+  <section className="container mx-auto mb-10 px-2 py-6 relative" style={{background: `url(${collectionsBackground}) center/cover no-repeat`}}>
+  <div className="absolute inset-0 bg-black/30 pointer-events-none" style={{zIndex: 0}}></div>
+  <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-6 lg:mb-8 text-center text-white relative z-10">Collections</h2>
+  <div
+    className={
+      displayData.collections.length === 1
+        ? "flex justify-center"
+        : displayData.collections.length === 2
+        ? "flex justify-center gap-6 lg:gap-12"
+        : "flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6 lg:gap-8 md:overflow-x-visible"
+    }
+    style={{zIndex: 10, position: 'relative'}}
+  >
+      {displayData.collections.map((collection) => (
+        <div
+          key={collection._id}
+          className={`min-w-[220px] max-w-xs md:max-w-sm lg:max-w-sm xl:max-w-md w-full flex-shrink-0 md:min-w-0 md:w-auto bg-white rounded-xl shadow-md border border-gray-200 p-3 md:p-4 lg:p-5 xl:p-6 flex flex-col transition hover:shadow-lg ${error ? "opacity-75" : ""}`}
+        >
+          <div className="h-24 md:h-32 lg:h-36 xl:h-40 w-full rounded-lg overflow-hidden mb-2 lg:mb-3 flex items-center justify-center bg-gray-100">
+            <img
+              src={collection.image}
+              alt={collection.title}
+              className="object-cover w-full h-full"
+              loading="lazy"
+            />
           </div>
-        </section>
-      )}
+          
+          <h3 className="text-base md:text-lg lg:text-xl xl:text-2xl italic font-bold mb-1 lg:mb-2 text-[#2c2c2c]">
+            {collection.title}
+          </h3>
+          
+          <p className="mb-2 lg:mb-3 text-[11px] md:text-xs lg:text-sm xl:text-sm text-[#6d4c41] leading-tight" style={{fontFamily: 'Georgia,serif'}}>
+            {collection.description}
+          </p>
+          
+          <div className="flex items-center justify-between mb-3 lg:mb-4">
+            <span className="px-2 py-1 lg:px-2.5 lg:py-1 xl:px-3 xl:py-1.5 rounded-full bg-[#2c2c2c] text-white font-extrabold text-sm lg:text-sm xl:text-base tracking-wide shadow-sm font-mono" style={{fontFamily: 'Fira Mono,monospace'}}>
+              ${collection.price?.toFixed(2)}
+            </span>
+            {error && <span className="text-xs lg:text-xs text-gray-400 ml-2">Demo</span>}
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-5 flex-1">
+            {collection.products && collection.products.slice(0, window.innerWidth >= 1024 ? 6 : 4).map((product) => (
+              <div key={product._id} className="bg-gray-50 rounded-lg p-2 lg:p-3 xl:p-4 flex flex-col items-center border border-gray-200 hover:bg-gray-100 transition-colors">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="object-contain w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 mb-2"
+                  loading="lazy"
+                />
+                <span className="text-xs md:text-sm lg:text-base xl:text-lg text-[#2c2c2c] text-center font-semibold leading-tight w-full">
+                  {product.name}
+                </span>
+              </div>
+            ))}
+          </div>
+          
+          <Button
+            onClick={() => handleAddToCart(collection._id)}
+            disabled={!!error}
+            className={`mt-auto px-4 py-2 lg:px-5 lg:py-2.5 xl:px-6 xl:py-3 rounded-full text-sm lg:text-sm xl:text-base font-medium transition bg-[#2c2c2c] text-white hover:bg-gray-800 cursor-pointer ${error ? "bg-gray-400 text-gray-600 cursor-not-allowed" : ""}`}
+          >
+            {error ? "Demo" : "Add to Cart"}
+          </Button>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
 
       {/* Customer Feedback Section */}
       {displayData?.feedbacks && displayData.feedbacks.length > 0 && (
         <section className="py-12 px-4 bg-gray-50">
           <div className="container mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">
+            <h2 className="text-3xl font-stretch-50% mb-8 text-center">
               Customer Feedback
             </h2>
 
@@ -646,6 +612,7 @@ export default function HomePageContent() {
                       }
                       alt="Customer feedback"
                       className="max-h-full max-w-full object-contain"
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -654,7 +621,7 @@ export default function HomePageContent() {
               {/* Navigation Controls */}
               <button
                 onClick={handlePrevFeedback}
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1/2 bg-black text-white p-2 rounded-full shadow-md z-10 hover:bg-gray-800"
+                className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1/2 bg-[#2c2c2c] text-white p-2 rounded-full shadow-md z-10 hover:bg-gray-800"
                 aria-label="Previous feedback"
               >
                 <svg
@@ -675,7 +642,7 @@ export default function HomePageContent() {
 
               <button
                 onClick={handleNextFeedback}
-                className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-black text-white p-2 rounded-full shadow-md z-10 hover:bg-gray-800"
+                className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1/2 bg-[#2c2c2c] text-white p-2 rounded-full shadow-md z-10 hover:bg-gray-800"
                 aria-label="Next feedback"
               >
                 <svg
@@ -706,7 +673,7 @@ export default function HomePageContent() {
                     }}
                     className={`h-2 rounded-full transition-all ${
                       currentFeedbackIndex === index
-                        ? "w-6 bg-black"
+                        ? "w-6 bg-[#2c2c2c]"
                         : "w-2 bg-gray-400"
                     }`}
                     aria-label={`Go to feedback ${index + 1}`}

@@ -13,17 +13,17 @@ const NotFound: React.FC = () => {
         />
         <meta name="robots" content="noindex, follow" />
       </Helmet>
-      <main className="min-h-screen bg-[#f6d9d2] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#2c2c2c] flex items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
-          <p className="text-xl text-gray-600 mb-8">Page not found</p>
+          <h1 className="text-6xl font-bold text-white mb-4">404</h1>
+          <p className="text-xl text-white mb-8">Page not found</p>
           <div className="space-y-4">
-            <p className="text-gray-500">Here are some helpful links:</p>
+            <p className="text-white">Here are some helpful links:</p>
             <nav className="space-x-4">
-              <Link to="/home" className="text-[#9283a9] hover:underline">
+              <Link to="/home" className="text-white hover:underline">
                 Home
               </Link>
-              <Link to="/about" className="text-[#9283a9] hover:underline">
+              <Link to="/about" className="text-white hover:underline">
                 About Us
               </Link>
             </nav>

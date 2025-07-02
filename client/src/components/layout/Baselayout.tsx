@@ -14,7 +14,7 @@ export function BaseLayout({ children }: BaseLayoutProps) {
       <Footer content={{ links: [] }} />
 
       <a
-        href="https://wa.me/96176951471"
+        href="https://wa.me/96176913342"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-4 right-4 z-50"

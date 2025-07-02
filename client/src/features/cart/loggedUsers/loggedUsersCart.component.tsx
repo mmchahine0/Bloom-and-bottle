@@ -35,6 +35,8 @@ const LoggedUsersCart: React.FC = () => {
   const email = useSelector((state: RootState) => state.userdata?.email);
   
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
+  const [removingCollectionId, setRemovingCollectionId] = useState<string | null>(null);
 
   // Query for cart data
   const { 
@@ -187,7 +189,10 @@ const LoggedUsersCart: React.FC = () => {
 
   // Remove item from cart
   const removeItem = (itemId: string) => {
-    removeItemMutation.mutate(itemId);
+    setRemovingItemId(itemId);
+    removeItemMutation.mutate(itemId, {
+      onSettled: () => setRemovingItemId(null)
+    });
   };
 
   // Clear entire cart
@@ -211,7 +216,10 @@ const LoggedUsersCart: React.FC = () => {
 
   // Remove collection from cart
   const removeCollection = (itemId: string) => {
-    removeCollectionMutation.mutate(itemId);
+    setRemovingCollectionId(itemId);
+    removeCollectionMutation.mutate(itemId, {
+      onSettled: () => setRemovingCollectionId(null)
+    });
   };
 
   // FIXED: Helper to get collection unit price and total
@@ -299,7 +307,7 @@ const LoggedUsersCart: React.FC = () => {
           quantity: collection.quantity,
           totalPrice: getCollectionPricing(collection).totalPrice // Use calculated total
         })) || [],
-        totalPrice: cart.totalPrice
+        totalPrice: cart.totalPrice,
       }, accessToken);
 
       if (!orderResponse.success) {
@@ -407,7 +415,7 @@ const LoggedUsersCart: React.FC = () => {
             <Link to={"/home"}>
               <Button 
                 onClick={() => window.history.back()}
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-[#2c2c2c] text-white hover:bg-gray-800"
               >
                 Continue Shopping
               </Button>
@@ -531,10 +539,10 @@ const LoggedUsersCart: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeItem(item.id)}
-                          disabled={removeItemMutation.isPending}
+                          disabled={removingItemId === item.id && removeItemMutation.isPending}
                           className="text-red-600 hover:text-red-800 hover:bg-red-50"
                         >
-                          {removeItemMutation.isPending ? (
+                          {removingItemId === item.id && removeItemMutation.isPending ? (
                             <LoadingSpinner size="sm" />
                           ) : (
                             <Trash2 size={16} />
@@ -557,7 +565,7 @@ const LoggedUsersCart: React.FC = () => {
                   const { unitPrice, totalPrice } = getCollectionPricing(collection);
                   
                   return (
-                    <div key={collection.id} className="flex flex-col gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                    <div key={collection.id} className="flex flex-col gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-white">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
                           <Package className="w-6 h-6 text-purple-600" />
@@ -637,10 +645,10 @@ const LoggedUsersCart: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeCollection(collection.id)}
-                          disabled={removeCollectionMutation.isPending}
+                          disabled={removingCollectionId === collection.id && removeCollectionMutation.isPending}
                           className="text-red-600 hover:text-red-800 hover:bg-red-50"
                         >
-                          {removeCollectionMutation.isPending ? (
+                          {removingCollectionId === collection.id && removeCollectionMutation.isPending ? (
                             <LoadingSpinner size="sm" />
                           ) : (
                             <Trash2 size={16} />
@@ -668,26 +676,26 @@ const LoggedUsersCart: React.FC = () => {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Items ({cart.totalItems})</span>
-                    <span>${cart.totalPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Shipping</span>
-                    <span>Calculated at checkout</span>
-                  </div>
-                  <hr />
-                  <div className="flex justify-between font-semibold text-lg">
-                    <span>Total</span>
-                    <span>${cart.totalPrice.toFixed(2)} USD</span>
-                  </div>
-                </div>
+              <div className="space-y-2">
+    <div className="flex justify-between text-sm">
+      <span>Items ({cart.totalItems})</span>
+      <span>${((cart.totalPrice || 0) - 3).toFixed(2)}</span>
+    </div>
+    <div className="flex justify-between text-sm">
+      <span>With Shipping</span>
+      <span>$3.00</span>
+    </div>
+    <hr />
+    <div className="flex justify-between font-semibold text-lg">
+      <span>Total</span>
+      <span>${((cart.totalPrice || 0)).toFixed(2)} USD</span>
+    </div>
+  </div>
 
                 <Button
                   onClick={handleCheckout}
                   disabled={isProcessingCheckout || (cart.items.length === 0 && (!cart.collectionItems || cart.collectionItems.length === 0))}
-                  className="w-full bg-black text-white hover:bg-gray-800 h-12"
+                  className="w-full bg-[#2c2c2c] text-white hover:bg-gray-800 h-12"
                 >
                   {isProcessingCheckout ? (
                     <div className="flex items-center gap-2">

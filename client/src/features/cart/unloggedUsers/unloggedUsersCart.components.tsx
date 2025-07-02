@@ -323,7 +323,7 @@ const UnloggedUsersCart: React.FC = () => {
             <p className="text-gray-500 mb-6">Add some products to get started!</p>
             <Link to={"/home"}>
               <Button 
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-[#2c2c2c] text-white hover:bg-gray-800"
               >
                 Continue Shopping
               </Button>
@@ -466,7 +466,7 @@ const UnloggedUsersCart: React.FC = () => {
                   if (!collection) return null;
                   
                   return (
-                    <div key={collection.id} className="flex flex-col gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                    <div key={collection.id} className="flex flex-col gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-white">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
                           <Package className="w-6 h-6 text-purple-600" />
@@ -572,32 +572,32 @@ const UnloggedUsersCart: React.FC = () => {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Items ({cart.totalItems})</span>
-                    <span>${(cart.totalPrice || 0).toFixed(2)}</span>
-                  </div>
-                  {cart.discount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount</span>
-                      <span>-${(cart.discount || 0).toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span>Shipping</span>
-                    <span>Calculated at checkout</span>
-                  </div>
-                  <hr />
-                  <div className="flex justify-between font-semibold text-lg">
-                    <span>Total</span>
-                    <span>${(cart.totalPrice || 0).toFixed(2)} USD</span>
-                  </div>
-                </div>
+              <div className="space-y-2">
+    <div className="flex justify-between text-sm">
+      <span>Items ({cart.totalItems})</span>
+      <span>${((cart.totalPrice || 0)- 3.00).toFixed(2)}</span>
+    </div>
+    {cart.discount > 0 && (
+      <div className="flex justify-between text-sm text-green-600">
+        <span>Discount</span>
+        <span>-${(cart.discount || 0).toFixed(2)}</span>
+      </div>
+    )}
+    <div className="flex justify-between text-sm">
+      <span>With Shipping</span>
+      <span>$3.00</span>
+    </div>
+    <hr />
+    <div className="flex justify-between font-semibold text-lg">
+      <span>Total</span>
+      <span>${(cart.totalPrice || 0).toFixed(2)} USD</span>
+    </div>
+  </div>
 
                 <Button
                   onClick={handleCheckout}
                   disabled={isProcessingCheckout || (cart.items.length === 0 && cart.collectionItems.length === 0) || cart.totalPrice <= 0}
-                  className="w-full bg-black text-white hover:bg-gray-800 h-12"
+                  className="w-full bg-[#2c2c2c] text-white hover:bg-gray-800 h-12"
                 >
                   {isProcessingCheckout ? (
                     <div className="flex items-center gap-2">

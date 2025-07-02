@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import NotFound from "@/features/notFound/notFound";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { AdminRoute } from "./AdminProtectedRoutes";
@@ -19,6 +19,15 @@ const layoutComponents = {
   dashboard: DashboardLayout,
   auth: AuthLayout,
 };
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+  return null;
+}
 
 const MainRouter: React.FC = () => {
   // For static routes
@@ -44,6 +53,7 @@ const MainRouter: React.FC = () => {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Public Routes */}
         {publicRoutes.map(renderRoute)}

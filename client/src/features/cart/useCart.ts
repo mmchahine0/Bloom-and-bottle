@@ -35,28 +35,53 @@ interface GuestCollectionCartItem {
   discount: number; // Always 0 for collections
 }
 
+// FIXED: Helper function to dispatch cart update events
+const dispatchCartUpdateEvents = (cart: GuestCart) => {
+  // Dispatch multiple events to ensure all components get notified
+  window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: cart }));
+  window.dispatchEvent(new CustomEvent('refreshGuestCart'));
+  
+  // Also trigger storage event manually for cross-tab communication
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: 'guest_cart',
+    newValue: JSON.stringify(cart),
+    storageArea: localStorage
+  }));
+};
+
+// ENHANCED: More aggressive cache invalidation for logged users
+const forceCartCacheUpdate = (userId: string) => {
+  // Invalidate all cart-related queries
+  queryClient.invalidateQueries({ queryKey: ['cart'] });
+  queryClient.invalidateQueries({ queryKey: ['cart', userId] });
+  
+  // Remove from cache to force fresh fetch
+  queryClient.removeQueries({ queryKey: ['cart', userId] });
+  
+  // Force immediate refetch
+  queryClient.refetchQueries({ 
+    queryKey: ['cart', userId],
+    type: 'active' 
+  });
+  
+  // Also update any global cart state if you have one
+  queryClient.invalidateQueries({ queryKey: ['user-cart-count'] });
+};
+
 export const useCart = () => {
   const { toast } = useToast();
   const accessToken = useSelector((state: RootState) => state.auth?.accessToken);
   const userId = useSelector((state: RootState) => state.auth?.id);
   const isAuthenticated = !!(accessToken && userId);
 
-  // FIXED: Helper function to invalidate cart cache
-  const invalidateCartCache = () => {
-    // Invalidate all cart-related queries
-    queryClient.invalidateQueries({ queryKey: ['cart'] });
-    queryClient.invalidateQueries({ queryKey: ['cart', userId] });
-    
-    // Force refetch the cart data
-    queryClient.refetchQueries({ queryKey: ['cart', userId] });
-  };
-
-  // Add to cart mutation for logged users - FIXED
+  // ENHANCED: Add to cart mutation for logged users with better cache management
   const addToCartMutation = useMutation({
     mutationFn: (item: AddToCartRequest) => addToCartAPI(item, accessToken!),
     onSuccess: () => {
-      // FIXED: More aggressive cache invalidation
-      invalidateCartCache();
+      // ENHANCED: More aggressive cache invalidation
+      if (userId) {
+        forceCartCacheUpdate(userId);
+      }
       toast({
         title: 'Success',
         description: 'Item added to cart successfully',
@@ -72,12 +97,14 @@ export const useCart = () => {
     },
   });
 
-  // UPDATED: Add collection to cart mutation for logged users - FIXED
+  // ENHANCED: Add collection to cart mutation for logged users with better cache management
   const addCollectionToCartMutation = useMutation({
     mutationFn: (collection: AddCollectionToCartRequest) => addCollectionToCartAPI(collection, accessToken!),
     onSuccess: () => {
-      // FIXED: More aggressive cache invalidation
-      invalidateCartCache();
+      // ENHANCED: More aggressive cache invalidation
+      if (userId) {
+        forceCartCacheUpdate(userId);
+      }
       toast({
         title: 'Success',
         description: 'Collection added to cart successfully',
@@ -188,7 +215,7 @@ export const useCart = () => {
     }
   };
 
-  // FIXED: Save guest cart with error handling
+  // FIXED: Save guest cart with error handling and event dispatch
   const saveGuestCart = (cart: GuestCart): boolean => {
     try {
       if (!cart) {
@@ -197,6 +224,10 @@ export const useCart = () => {
       }
       
       localStorage.setItem(STORAGE_KEYS.GUEST_CART, JSON.stringify(cart));
+      
+      // FIXED: Dispatch events after saving
+      dispatchCartUpdateEvents(cart);
+      
       return true;
     } catch (error) {
       console.error('Error saving guest cart:', error);
@@ -247,15 +278,11 @@ export const useCart = () => {
       // Recalculate totals
       cart = calculateGuestCartTotals(cart);
       
-      // Save to localStorage
+      // Save to localStorage (this will also dispatch events)
       const saved = saveGuestCart(cart);
       if (!saved) {
         throw new Error('Failed to save cart to localStorage');
       }
-      
-      
-      // FIXED: Dispatch custom event to notify cart component
-      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: cart }));
       
       toast({
         title: 'Success',
@@ -302,7 +329,6 @@ export const useCart = () => {
         return;
       }
 
-
       let cart = getGuestCart();
   
       const existingCollectionIndex = cart.collectionItems.findIndex(
@@ -333,17 +359,11 @@ export const useCart = () => {
       // Recalculate totals
       cart = calculateGuestCartTotals(cart);
       
-      
-      
-      // Save to localStorage
+      // Save to localStorage (this will also dispatch events)
       const saved = saveGuestCart(cart);
       if (!saved) {
         throw new Error('Failed to save cart to localStorage');
       }
-      
-      
-      // FIXED: Dispatch custom event to notify cart component
-      window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: cart }));
       
       toast({
         title: 'Success',
@@ -359,7 +379,7 @@ export const useCart = () => {
     }
   };
 
-  // FIXED: Main add to cart function with better error handling
+  // ENHANCED: Main add to cart function with better error handling
   const addToCart = (item: AddToCartData) => {
     try {
       if (!item) {
@@ -387,7 +407,7 @@ export const useCart = () => {
     }
   };
 
-  // FIXED: Main add collection to cart function with better error handling
+  // ENHANCED: Main add collection to cart function with better error handling
   const addCollectionToCart = (collectionData: AddCollectionToCartRequest & { 
     collectionName?: string; 
     collectionDescription?: string; 
@@ -433,9 +453,10 @@ export const useCart = () => {
     addCollectionToCart,
     isAuthenticated,
     // ADDED: Expose additional utilities
-    invalidateCartCache,
+    forceCartCacheUpdate: () => userId && forceCartCacheUpdate(userId),
     getGuestCart,
     calculateGuestCartTotals,
     saveGuestCart,
+    dispatchCartUpdateEvents, // ADDED: Expose the dispatch function
   };
 };

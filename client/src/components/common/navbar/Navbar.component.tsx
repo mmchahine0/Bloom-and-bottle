@@ -18,9 +18,10 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import logo from "@/assets/logoSlim.png";
+import logo from "@/assets/logo.png";
 import { searchProducts } from "@/features/search/search.services";
 import { ProductWithCreator } from "@/features/admin/adminProducts/adminProducts.types";
+import { useCartCount } from "@/features/cart/CartCounter"; 
 
 interface NavbarProps {
   customLinks?: {
@@ -54,10 +55,12 @@ const Navbar: React.FC<NavbarProps> = () => {
   const samplesMenuRef = useRef<HTMLDivElement>(null);
   const currentSearchRef = useRef<string>("");
 
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { accessToken } = useSelector((state: RootState) => state.auth);
+  
+  // UPDATED: Use the unified cart count hook
+  const cartCount = useCartCount();
 
   // Handle closing menu with Escape key
   useEffect(() => {
@@ -283,11 +286,11 @@ const Navbar: React.FC<NavbarProps> = () => {
   return (
     <header>
       {/* Sliding announcement banner */}
-      <div className=" overflow-hidden py-2 text-white border-b-1 cursor-default bg-black">
+      <div className=" overflow-hidden py-1 text-white border-b-1 cursor-default bg-[#2c2c2c] font-serif tracking-wide text-[15px]">
         <div className="flex items-center justify-center relative">
           <button
             onClick={handlePrevMessage}
-            className="relative left-2 text-[#ecbdc6] hover:text-white z-10"
+            className="relative left-2 text-white hover:text-white z-10"
             aria-label="Previous message"
           >
             <ChevronLeft size={20} />
@@ -303,7 +306,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               {array.map((item, index) => (
                 <span
                   key={`${item}-${index}`}
-                  className="w-full flex-shrink-0 text-center font-bold text-[#ecbdc6] font-mono"
+                  className="w-full flex-shrink-0 text-center font-bold text-white font-mono"
                 >
                   {item}
                 </span>
@@ -313,7 +316,7 @@ const Navbar: React.FC<NavbarProps> = () => {
 
           <button
             onClick={handleNextMessage}
-            className="relative right-2 text-[#ecbdc6] hover:text-white z-10"
+            className="relative right-2 text-white hover:text-white z-10"
             aria-label="Next message"
           >
             <ChevronRight size={20} />
@@ -321,7 +324,7 @@ const Navbar: React.FC<NavbarProps> = () => {
         </div>
       </div>
       <nav
-        className="bg-black border-b border-[#f6d9d2] px-4 py-2.5 relative z-50"
+        className="bg-[#2c2c2c] border-b border-white px-2 py-1.5 relative z-50 font-serif tracking-wide text-[15px]"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -331,26 +334,26 @@ const Navbar: React.FC<NavbarProps> = () => {
             <div className="flex items-center space-x-4">
               <Link
                 to="/home"
-                className="text-xl font-bold text-[#f6d9d2] hover:text-[#f6d9d2]/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] rounded-md"
+                className="text-xl font-bold text-white hover:text-gray-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] font-serif tracking-wide cursor-pointer"
                 aria-label="MyApp Home"
               >
                 <img
                   src={logo}
                   alt="Bloom and bottle"
-                  className="max-h-24 max-w-40"
+                  className="max-h-26 max-w-40"
                 />
               </Link>
               <div
-                className="flex items-center space-x-2 border- "
+                className="flex items-center space-x-2 group cursor-pointer"
                 onClick={toggleSearch}
               >
                 <button
-                  className="text-[#ecbdc6] hover:text-white p-2 transition-colors "
+                  className="text-white p-2 transition-colors group-hover:text-gray-900"
                   aria-label="Search"
                 >
                   <Search size={20} />
                 </button>
-                <p className="py-1.5 text-[#ecbdc6] rounded-md pr-4 pointer-events-none hidden  lg:block">
+                <p className="py-1.5 text-white rounded-md pr-4 pointer-events-none hidden lg:block transition-colors group-hover:text-gray-900">
                   Search Items Here
                 </p>
               </div>
@@ -361,7 +364,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               <div className="flex space-x-6">
                 <Link
                   to="/home"
-                  className="text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                  className="text-white hover:text-gray-900 px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                 >
                   Home
                 </Link>
@@ -370,7 +373,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 <div className="relative">
                   <button
                     onClick={toggleSamplesMenu}
-                    className="text-[#ecbdc6] hover:text-white flex items-center px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="text-white hover:text-gray-900 flex items-center px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-expanded={samplesMenuOpen}
                     aria-haspopup="true"
                   >
@@ -382,13 +385,13 @@ const Navbar: React.FC<NavbarProps> = () => {
                   {samplesMenuOpen && (
                     <div
                       ref={samplesMenuRef}
-                      className="absolute mt-1 w-48 rounded-md shadow-lg bg-black border border-[#f6d9d2] py-1"
+                      className="absolute mt-1 w-48 shadow-lg bg-[#2c2c2c] border border-white py-1"
                       role="menu"
                       aria-orientation="vertical"
                     >
                       <Link
                         to="/samples/men"
-                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        className="block px-4 py-2 text-sm text-white hover:bg-gray-900 hover:text-white cursor-pointer"
                         role="menuitem"
                         onClick={() => setSamplesMenuOpen(false)}
                       >
@@ -396,7 +399,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                       </Link>
                       <Link
                         to="/samples/women"
-                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        className="block px-4 py-2 text-sm text-white hover:bg-gray-900 hover:text-white cursor-pointer"
                         role="menuitem"
                         onClick={() => setSamplesMenuOpen(false)}
                       >
@@ -404,7 +407,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                       </Link>
                       <Link
                         to="/samples"
-                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        className="block px-4 py-2 text-sm text-white hover:bg-gray-900 hover:text-white cursor-pointer"
                         role="menuitem"
                         onClick={() => setSamplesMenuOpen(false)}
                       >
@@ -418,7 +421,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 <div className="relative">
                   <button
                     onClick={togglePerfumesMenu}
-                    className="text-[#ecbdc6] hover:text-white flex items-center px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="text-white hover:text-gray-900 flex items-center px-3 py-2 rounded-md text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-expanded={perfumesMenuOpen}
                     aria-haspopup="true"
                   >
@@ -430,13 +433,13 @@ const Navbar: React.FC<NavbarProps> = () => {
                   {perfumesMenuOpen && (
                     <div
                       ref={perfumesMenuRef}
-                      className="absolute mt-1 w-48 rounded-md shadow-lg bg-black border border-[#f6d9d2] py-1"
+                      className="absolute mt-1 w-48 shadow-lg bg-[#2c2c2c] border border-white py-1"
                       role="menu"
                       aria-orientation="vertical"
                     >
                       <Link
                         to="/perfumes/men"
-                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        className="block px-4 py-2 text-sm text-white hover:bg-gray-900 hover:text-white cursor-pointer"
                         role="menuitem"
                         onClick={() => setPerfumesMenuOpen(false)}
                       >
@@ -444,7 +447,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                       </Link>
                       <Link
                         to="/perfumes/women"
-                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        className="block px-4 py-2 text-sm text-white hover:bg-gray-900 hover:text-white cursor-pointer"
                         role="menuitem"
                         onClick={() => setPerfumesMenuOpen(false)}
                       >
@@ -452,7 +455,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                       </Link>
                       <Link
                         to="/perfumes"
-                        className="block px-4 py-2 text-sm text-[#ecbdc6] hover:bg-gray-900 hover:text-white"
+                        className="block px-4 py-2 text-sm text-white hover:bg-gray-900 hover:text-white cursor-pointer"
                         role="menuitem"
                         onClick={() => setPerfumesMenuOpen(false)}
                       >
@@ -475,7 +478,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   {/* Logged in: Show User, Cart, and Logout icons */}
                   <Link
                     to="/dashboard/profile"
-                    className="text-[#ecbdc6] hover:text-white p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="text-white hover:text-gray-900 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-label="User profile"
                     role="menuitem"
                   >
@@ -483,15 +486,20 @@ const Navbar: React.FC<NavbarProps> = () => {
                   </Link>
                   <Link
                     to="/cart"
-                    className="text-[#ecbdc6] hover:text-white p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="text-white hover:text-gray-900 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] relative cursor-pointer"
                     aria-label="Shopping cart"
                     role="menuitem"
                   >
                     <ShoppingCart size={24} />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center border border-white">
+                        {cartCount}
+                      </span>
+                    )}
                   </Link>
                   <button
                     onClick={handleSignOut}
-                    className="text-[#F93827] hover:text-white p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F93827]"
+                    className="text-[#F93827] hover:text-gray-900 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F93827] cursor-pointer"
                     role="menuitem"
                     aria-label="Sign out"
                   >
@@ -503,7 +511,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   {/* Logged out: Show Login and Cart icons */}
                   <Link
                     to="/auth/login"
-                    className="text-[#ecbdc6] hover:text-white p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="text-white hover:text-gray-900 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-label="Log in"
                     role="menuitem"
                   >
@@ -511,11 +519,16 @@ const Navbar: React.FC<NavbarProps> = () => {
                   </Link>
                   <Link
                     to="/cart"
-                    className="text-[#ecbdc6] hover:text-white p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="text-white hover:text-gray-900 p-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] relative cursor-pointer"
                     aria-label="Shopping cart"
                     role="menuitem"
                   >
                     <ShoppingCart size={24} />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center border border-white">
+                        {cartCount}
+                      </span>
+                    )}
                   </Link>
                 </>
               )}
@@ -525,7 +538,7 @@ const Navbar: React.FC<NavbarProps> = () => {
             <button
               ref={buttonRef}
               onClick={toggleMenu}
-              className="md:hidden p-2 rounded-md text-[#ecbdc6] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+              className="md:hidden p-2 rounded-md text-white hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMenuOpen ? "Close main menu" : "Open main menu"}
@@ -551,7 +564,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               <Link
                 to="/home"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                className="flex items-center space-x-2 text-white hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                 role="menuitem"
               >
                 <span className="text-sm font-medium">Home</span>
@@ -566,17 +579,17 @@ const Navbar: React.FC<NavbarProps> = () => {
                       submenu.classList.toggle("hidden");
                     }
                   }}
-                  className="flex items-center justify-between w-full text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                  className="flex items-center justify-between w-full text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                   role="menuitem"
                 >
-                  <span className="text-sm font-medium">Samples</span>
+                  <span className="text-sm font-medium ">Samples</span>
                   <ChevronDown size={16} />
                 </button>
                 <div id="samples-submenu" className="hidden pl-4 space-y-1">
                   <Link
                     to="/samples/men"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     role="menuitem"
                   >
                     <span className="text-sm font-medium">Men</span>
@@ -584,7 +597,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/samples/women"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     role="menuitem"
                   >
                     <span className="text-sm font-medium">Women</span>
@@ -592,7 +605,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/samples"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     role="menuitem"
                   >
                     <span className="text-sm font-medium">View All</span>
@@ -609,7 +622,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                       submenu.classList.toggle("hidden");
                     }
                   }}
-                  className="flex items-center justify-between w-full text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                  className="flex items-center justify-between w-full text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                   role="menuitem"
                 >
                   <span className="text-sm font-medium">Perfumes</span>
@@ -619,7 +632,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/perfumes/men"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     role="menuitem"
                   >
                     <span className="text-sm font-medium">Men</span>
@@ -627,7 +640,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/perfumes/women"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     role="menuitem"
                   >
                     <span className="text-sm font-medium">Women</span>
@@ -635,7 +648,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/perfumes"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-gray-900 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     role="menuitem"
                   >
                     <span className="text-sm font-medium">View All</span>
@@ -651,7 +664,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/dashboard/profile"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-label="User profile"
                     role="menuitem"
                   >
@@ -661,16 +674,23 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/cart"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-label="Shopping cart"
                     role="menuitem"
                   >
-                    <ShoppingCart size={20} />
+                    <div className="relative">
+                      <ShoppingCart size={20} />
+                      {cartCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-1 py-0.5 min-w-[16px] text-center border border-white">
+                          {cartCount}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-sm font-medium">Cart</span>
                   </Link>
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center space-x-2 text-[#F93827] hover:text-white px-3 py-2 rounded-md transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F93827]"
+                    className="flex items-center space-x-2 text-[#F93827] hover:text-white px-3 py-2 rounded-md transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F93827] cursor-pointer"
                     role="menuitem"
                     aria-label="Sign out"
                   >
@@ -684,7 +704,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/auth/login"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-label="Log in"
                     role="menuitem"
                   >
@@ -694,11 +714,18 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Link
                     to="/cart"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 text-[#ecbdc6] hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F]"
+                    className="flex items-center space-x-2 text-white hover:text-white px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16C47F] cursor-pointer"
                     aria-label="Shopping cart"
                     role="menuitem"
                   >
-                    <ShoppingCart size={20} />
+                    <div className="relative">
+                      <ShoppingCart size={20} />
+                      {cartCount > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-1 py-0.5 min-w-[16px] text-center border border-white">
+                          {cartCount}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-sm font-medium">Cart</span>
                   </Link>
                 </>
@@ -710,7 +737,7 @@ const Navbar: React.FC<NavbarProps> = () => {
           {isSearchOpen && (
             <div
               ref={searchRef}
-              className="absolute top-full left-0 right-0 w-full bg-black border border-[#f6d9d2] shadow-lg"
+              className="absolute top-full left-0 right-0 w-full bg-[#2c2c2c] border border-white shadow-lg"
               style={{ position: "absolute", top: "100%" }}
             >
               <div className="p-4 pt-2">
@@ -739,7 +766,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   </div>
                   <button
                     onClick={toggleSearch}
-                    className="text-[#ecbdc6] hover:text-white p-2"
+                    className="text-white hover:text-white p-2"
                     aria-label="Close search"
                   >
                     <X size={20} />
@@ -760,7 +787,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                       <Link
                         key={`${product.id}-${index}`}
                         to={`/product/${product._id}`}
-                        className="flex items-center gap-3 p-2 hover:bg-gray-900 rounded-md transition-colors"
+                        className="flex items-center gap-3 p-2 hover:bg-gray-900 rounded-md transition-colors cursor-pointer"
                         onClick={() => setIsSearchOpen(false)}
                       >
                         <div className="w-12 h-12 bg-[#110000] flex items-center justify-center rounded overflow-hidden flex-shrink-0">
@@ -775,11 +802,11 @@ const Navbar: React.FC<NavbarProps> = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[#ecbdc6] font-medium truncate">{product.name}</p>
+                          <p className="text-white font-medium truncate">{product.name}</p>
                           <p className="text-sm text-gray-400 truncate">{product.brand}</p>
                         </div>
                         <div className="flex-shrink-0">
-                          <p className="text-[#ecbdc6] font-medium">${product.price}</p>
+                          <p className="text-white font-medium">${product.price}</p>
                         </div>
                       </Link>
                     ))}

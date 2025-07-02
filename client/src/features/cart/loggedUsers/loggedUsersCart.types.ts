@@ -202,6 +202,7 @@ export interface PlaceOrderRequest {
     totalPrice: number;
   }>;
   totalPrice: number;
+  originalTotalPrice?: number;
 }
 
 export interface PlaceOrderAPIResponse {
@@ -217,6 +218,7 @@ export interface PlaceOrderAPIResponse {
       price: number;
     }>;
     totalPrice: number;
+    originalTotalPrice?: number;
     status: string;
     createdAt: string;
   };

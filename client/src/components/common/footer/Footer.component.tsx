@@ -14,12 +14,12 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
   const description =
     content?.description ?? "Luxury Perfume Decants & Samples";
 
-  const whatsappNumber = "+961 76 951 471";
+  const whatsappNumber = "+961 76 913 342";
   const instagramHandle = "bloomandbottle.lb";
 
   return (
     <footer
-      className="bg-black border-t"
+      className="bg-[#2c2c2c] border-t font-serif tracking-wide text-[15px]"
       role="contentinfo"
       aria-label="Site footer"
     >
@@ -32,12 +32,12 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
           >
             <h2
               id="company-info"
-              className="text-lg font-semibold text-[#f6d9d2]"
+              className="text-xl font-bold text-white font-serif tracking-wide mb-1"
             >
               {"Bloom and bottle"}
             </h2>
             <p
-              className="text-sm text-[#ecbdc6] text-center sm:text-left max-w-md"
+              className="text-base text-white text-center sm:text-left max-w-md font-serif tracking-wide mb-2"
               aria-label="Company description"
             >
               {description}
@@ -55,9 +55,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
             >
               <Link
                 to={"/about"}
-                className="text-sm text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] 
-                             rounded-sm px-2 py-1"
+                className="text-sm text-white hover:text-gray-900 transition-colors duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] rounded-sm px-2 py-1 cursor-pointer"
                 aria-label={`About us - Footer link`}
               >
                 About Us
@@ -65,9 +63,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
               <a
                 href={`https://wa.me/${whatsappNumber.replace(/\s+/g, "")}`}
                 target="_blank"
-                className="text-sm text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] 
-                             rounded-sm px-2 py-1"
+                className="text-sm text-white hover:text-gray-900 transition-colors duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] rounded-sm px-2 py-1 cursor-pointer"
                 aria-label={`Contact Us - Footer link`}
               >
                 Contact Us
@@ -82,9 +78,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
             href={`https://instagram.com/${instagramHandle}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
-                      flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 
-                      focus-visible:ring-[white] rounded-sm px-2 py-1"
+            className="text-white hover:text-gray-900 transition-colors duration-150 ease-in-out flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] rounded-sm px-2 py-1 cursor-pointer"
             aria-label="Find us on Instagram"
           >
             <Instagram size={20} />
@@ -94,9 +88,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
             href={`https://wa.me/${whatsappNumber.replace(/\s+/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#ecbdc6] hover:text-white transition-colors duration-150 ease-in-out
-                      flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 
-                      focus-visible:ring-[white] rounded-sm px-2 py-1"
+            className="text-white hover:text-gray-900 transition-colors duration-150 ease-in-out flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[white] rounded-sm px-2 py-1 cursor-pointer"
             aria-label="Contact us on WhatsApp"
           >
             <MessageCircle size={20} />
@@ -110,7 +102,7 @@ const Footer: React.FC<FooterProps> = ({ content }) => {
           role="presentation"
         >
           <p
-            className="text-center text-sm text-[#ecbdc6]"
+            className="text-center text-sm text-white"
             aria-label={`Copyright ${currentYear} ${"Bloom and bottle"}`}
           >
             <span aria-hidden="true">©</span> {currentYear} {"Bloom and bottle"}

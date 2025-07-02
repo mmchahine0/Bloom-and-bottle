@@ -223,7 +223,7 @@ const MenPerfumesPage: React.FC = () => {
       {showFilters && (
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
+          <div className="absolute inset-0 bg-[#2c2c2c]/50" onClick={() => setShowFilters(false)} />
 
           {/* Filter Panel */}
           <div className="relative z-10 w-full max-w-md bg-white h-full overflow-y-auto">
@@ -421,7 +421,7 @@ const MenPerfumesPage: React.FC = () => {
                       className="w-full h-64 object-cover object-center group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                    <div className="absolute inset-0 bg-[#2c2c2c]/0 group-hover:bg-[#2c2c2c]/10 transition-colors duration-300" />
                   </div>
 
                   <div className="p-4">

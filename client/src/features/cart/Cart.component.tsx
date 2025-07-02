@@ -223,7 +223,7 @@ const Cart: React.FC<CartComponentProps> = ({
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-4">
-                <span>🚚 Free delivery all over Lebanon</span>
+                <span>🚚 3$ Delivery all over Lebanon</span>
                 <span>💯 100% Authentic products</span>
                 <span>🔒 Secure checkout</span>
               </div>

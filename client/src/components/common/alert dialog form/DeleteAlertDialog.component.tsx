@@ -42,7 +42,7 @@ export const DeleteAlertDialog: React.FC<DeleteAlertDialogProps> = ({
             {description}{" "}
             {itemName && (
               <>
-                <span className="font-medium text-black">{itemName}</span> ?
+                <span className="font-medium text-[#2c2c2c]">{itemName}</span> ?
               </>
             )}
           </AlertDialogDescription>
