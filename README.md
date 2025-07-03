@@ -107,12 +107,35 @@ yarn install
 Create `.env` files in both `client/` and `server/` directories. Example for server:
 
 ```env
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
-AWS_S3_BUCKET=your_bucket_name
-REDIS_URL=your_redis_url
+server/ 
+
+MONGODB_URI=""
+JWT_REFRESH_SECRET=""
+JWT_SECRET=""
+
+CORS_ORIGIN=""
+
+PORT=""
+REDIS_URL=""
+
+GMAIL_CLIENT_ID=""
+GMAIL_CLIENT_SECRET=""
+GMAIL_REFRESH_TOKEN=""
+GMAIL_EMAIL=""
+
+
+AWS_ACCESS_KEY=""
+AWS_SECRET_KEY=""
+AWS_REGION=""
+
+BUCKET_NAME="" 
+
+NODE_ENV=""
+
+client/
+
+VITE_REDUX_ENCRYPTION_KEY=""
+VITE_API_BASE_URL=""
 ```
 
 ### 4. Run the development servers
