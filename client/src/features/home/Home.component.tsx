@@ -149,6 +149,7 @@ export default function HomePageContent() {
   const { data, isLoading, error } = useQuery<ApiResponse<HomepageData>>({
     queryKey: ["homepage"],
     queryFn: getHomepageData,
+    staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
   });
 
   const [currentFeedbackIndex, setCurrentFeedbackIndex] = useState(0);
@@ -268,61 +269,43 @@ export default function HomePageContent() {
     }
   };
 
-  // Show loading skeleton with animation
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col animate-pulse">
-        {/* Hero Section Skeleton */}
-        <section className="relative h-screen w-full flex items-center justify-center bg-gray-300">
-          <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
-            <div className="h-16 bg-gray-400 rounded mb-4 mx-auto w-3/4"></div>
-            <div className="h-8 bg-gray-400 rounded mb-8 mx-auto w-1/2"></div>
-            <div className="h-12 bg-gray-400 rounded-full mx-auto w-48"></div>
-          </div>
-        </section>
 
-        {/* Collections Skeleton */}
-        <section className="w-full py-16 px-4 sm:px-6 lg:px-8 bg-gray-100">
-          <div className="max-w-7xl mx-auto">
-            <div className="h-10 bg-gray-300 rounded mb-16 mx-auto w-64"></div>
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="flex-1">
-                <div className="bg-gray-300 rounded-lg aspect-[4/5] mb-4"></div>
-              </div>
-              <div className="flex-1">
-                <div className="bg-gray-300 rounded-lg aspect-[4/5] mb-4"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+  const featuredLoading = () =>{
+// Show loading skeleton with animation
+if (isLoading) {
+  return (
+    <div className="min-h-screen flex flex-col animate-pulse">
 
-        {/* Featured Items Skeleton */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="h-8 bg-gray-300 rounded mb-10 mx-auto w-48"></div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md"
-                >
-                  <div className="p-4 flex flex-col h-full">
-                    <div className="flex-1 bg-gray-300 rounded-lg mb-4 h-60"></div>
-                    <div className="space-y-2">
-                      <div className="h-6 bg-gray-300 rounded"></div>
-                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                      <div className="h-10 bg-gray-300 rounded mt-4"></div>
-                    </div>
+
+      {/* Featured Items Skeleton */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-8 bg-gray-300 rounded mb-10 mx-auto w-48"></div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md"
+              >
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex-1 bg-gray-300 rounded-lg mb-4 h-60"></div>
+                  <div className="space-y-2">
+                    <div className="h-6 bg-gray-300 rounded"></div>
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    <div className="h-10 bg-gray-300 rounded mt-4"></div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        </section>
-      </div>
-    );
+        </div>
+      </section>
+    </div>
+  );
+}
   }
+  
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -442,71 +425,90 @@ export default function HomePageContent() {
     </div>
   </div>
 </section>
-
       {/* Featured Items Section */}
       <section className="py-8 px-4 sm:px-6 lg:px-8 border-y-2 border-[#2c2c2c]">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-stretch-100% text-[#2c2c2c] mb-10 text-center">
             Featured Items
           </h2>
+          {isLoading ? (
+          // Featured skeleton here
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {displayData?.featuredItems && displayData.featuredItems.map(
-              (item: {
-                _id: string;
-                name: string;
-                brand: string;
-                price: number;
-                sizes: Array<{ label: string; price: number }>;
-                image: string;
-                type: string;
-              }) => (
-                <div
-                  key={item._id}
-                  className={`bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] ${
-                    error ? "opacity-75" : ""
-                  }`}
-                >
-                  <div className="p-4 flex flex-col h-full">
-                    <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 rounded-lg mb-4">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full max-h-60 object-contain"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{item.name}</h3>
-                      <p className="text-sm text-gray-600">{item.brand}</p>
-                      <div className="flex justify-between items-center mt-4">
-                        <p className="text-lg font-bold">From ${item.price}</p>
-                        <p className="text-sm text-gray-500 m-2">
-                          Sizes:{" "}
-                          {item.sizes
-                            .map(
-                              (size: { label: string; price: number }) =>
-                                `${size.label} `
-                            )
-                            .join(", ")}
-                        </p>
-                      </div>
-                      <button
-                        className={`mt-4 w-full py-2 rounded-lg transition ${
-                          error
-                            ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                            : "bg-[#2c2c2c] text-white hover:bg-gray-800 cursor-pointer"
-                        }`}
-                        disabled={!!error}
-                        onClick={() => handleCheckItem(item._id)}
-                      >
-                        {error ? "Demo Item" : "Check item"}
-                      </button>
-                    </div>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md"
+              >
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex-1 bg-gray-300 rounded-lg mb-4 h-60"></div>
+                  <div className="space-y-2">
+                    <div className="h-6 bg-gray-300 rounded"></div>
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    <div className="h-10 bg-gray-300 rounded mt-4"></div>
                   </div>
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </div>
+        ) : (<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {displayData?.featuredItems && displayData.featuredItems.map(
+            (item: {
+              _id: string;
+              name: string;
+              brand: string;
+              price: number;
+              sizes: Array<{ label: string; price: number }>;
+              image: string;
+              type: string;
+            }) => (
+              <div
+                key={item._id}
+                className={`bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] ${
+                  error ? "opacity-75" : ""
+                }`}
+              >
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 rounded-lg mb-4">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full max-h-60 object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">{item.name}</h3>
+                    <p className="text-sm text-gray-600">{item.brand}</p>
+                    <div className="flex justify-between items-center mt-4">
+                      <p className="text-lg font-bold">From ${item.price}</p>
+                      <p className="text-sm text-gray-500 m-2">
+                        Sizes:{" "}
+                        {item.sizes
+                          .map(
+                            (size: { label: string; price: number }) =>
+                              `${size.label} `
+                          )
+                          .join(", ")}
+                      </p>
+                    </div>
+                    <button
+                      className={`mt-4 w-full py-2 rounded-lg transition ${
+                        error
+                          ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                          : "bg-[#2c2c2c] text-white hover:bg-gray-800 cursor-pointer"
+                      }`}
+                      disabled={!!error}
+                      onClick={() => handleCheckItem(item._id)}
+                    >
+                      {error ? "Demo Item" : "Check item"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </div>)}
         </div>
       </section>
 

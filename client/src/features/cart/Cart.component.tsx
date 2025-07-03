@@ -212,7 +212,7 @@ const Cart: React.FC<CartComponentProps> = ({
 
       <div className={`bg-gray-50 ${className}`}>
         {/* Main Cart Content */}
-        <main className="container mx-auto p-20">
+        <main className="">
           {renderCartComponent()}
         </main>
 
