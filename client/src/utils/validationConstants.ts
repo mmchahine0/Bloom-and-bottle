@@ -23,22 +23,6 @@ export const PASSWORD_VALIDATION = {
 // Name validation matching backend rules
 export const NAME_REGEX = /^[a-zA-Z\s]{2,30}$/;
 
-// Todo validation
-export const TODO_VALIDATION = {
-  validateTitle: (title: string): string => {
-    if (title.trim().length === 0) {
-      return "Title cannot be empty";
-    }
-    return "";
-  },
-  validateContent: (content: string): string => {
-    if (content.trim().length === 0) {
-      return "Content cannot be empty";
-    }
-    return "";
-  },
-};
-
 // Validate email including blocked domains
 export const validateEmail = (email: string): string => {
   if (!email.trim()) {
